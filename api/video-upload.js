@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       allowedContentTypes: [contentType],
       maximumSizeInBytes: maxSize
     });
-    const { presignedUrl } = await presignUrl(token, { pathname, operation: "put", validUntil });
+    const { presignedUrl } = await presignUrl(token, { pathname, operation: "put", access: "private", validUntil, allowedContentTypes: [contentType], maximumSizeInBytes: maxSize });
     return res.status(200).json({ uploadUrl: presignedUrl, pathname, contentType, originalName: String(originalName || "").slice(0, 180) });
   } catch (error) {
     console.error("Private video URL generation failed", error);
