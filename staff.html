@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saint-Crown Staff Review</title>
+<style>
+:root{color-scheme:dark;--bg:#090909;--panel:#151515;--line:#343434;--gold:#caa35d;--muted:#aaa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f1e8;font:16px/1.5 Arial,sans-serif}
+main{max-width:900px;margin:0 auto;padding:32px 18px 70px}.brand{color:var(--gold);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:13px}
+h1{font-size:32px;margin:10px 0 4px}.muted{color:var(--muted)}.panel,.application{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}input{width:100%;padding:13px;border:1px solid var(--line);border-radius:8px;background:#080808;color:white;font-size:16px}
+button{border:0;border-radius:8px;padding:12px 17px;background:var(--gold);color:#17130b;font-weight:700;cursor:pointer;margin-top:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0}.field{font-size:14px}.field b{color:var(--muted);font-weight:400;display:block;font-size:12px}
+.application h2{font-size:19px;margin:0}.application .meta{color:var(--muted);font-size:13px}.application button{margin-right:8px}
+video{width:100%;max-height:520px;margin-top:14px;background:#000;border-radius:10px}
+#message{margin-top:10px;color:var(--muted);white-space:pre-wrap}
+</style>
+</head>
+<body><main>
+<div class="brand">Saint-Crown Recruiting</div><h1>Staff application review</h1>
+<p class="muted">Private staff workspace. Athlete information and footage are only loaded after staff authentication.</p>
+<section class="panel">
+<label for="staffToken">Staff access token</label><input id="staffToken" type="password" autocomplete="current-password" placeholder="Enter staff access token">
+<button id="load">Unlock applications</button><div id="message" role="status"></div>
+</section>
+<section id="applications" aria-live="polite"></section>
+<section id="playerPanel" hidden><h2 id="playerTitle">Private athlete video</h2><video id="player" controls playsinline></video></section>
+</main>
+<script>
+let staffToken="",activeVideoUrl="";
+const message=document.getElementById("message"),list=document.getElementById("applications"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
+function field(label,value){const el=document.createElement("div");el.className="field";const b=document.createElement("b");b.textContent=label;el.append(b,document.createTextNode(value==null||value===""?"—":String(value)));return el}
+function showMessage(value){message.textContent=value}
+document.getElementById("load").addEventListener("click",async()=>{
+ staffToken=document.getElementById("staffToken").value.trim();
+ if(!staffToken){showMessage("Enter your staff token.");return}
+ showMessage("Loading applications…");list.replaceChildren();playerPanel.hidden=true;
+ try{
+  const response=await fetch("/api/staff-applications",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not authenticate.");
+  if(!data.applications.length){showMessage("No applications have been submitted yet.");return}
+  showMessage(data.applications.length+" recent application(s) loaded.");
+  for(const app of data.applications){
+   const card=document.createElement("article");card.className="application";
+   const title=document.createElement("h2");title.textContent=app.name+" · "+app.level;
+   const meta=document.createElement("div");meta.className="meta";meta.textContent=new Date(app.createdAt).toLocaleString();
+   const grid=document.createElement("div");grid.className="grid";
+   [["Grad year",app.grad],["Position",app.position],["School",app.school],["GPA",app.gpa],["Plan",app.plan],["Recruiting status",app.status],["Athlete email",app.email],["Parent email",app.parentEmail],["Parent consent",app.parentConsent?"Yes":"No"],["Video",app.hasVideo?(app.filmOriginalName||"Uploaded"):"None"]].forEach(([k,v])=>grid.append(field(k,v)));
+   card.append(title,meta,grid);
+   if(app.hasVideo){
+    const watch=document.createElement("button");watch.textContent="Watch private video";
+    watch.addEventListener("click",async()=>{
+     showMessage("Loading private video…");
+     try{
+      const r=await fetch("/api/staff-video?applicationId="+encodeURIComponent(app.id),{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
+      if(!r.ok)throw new Error("Video could not be retrieved.");
+      const blob=await r.blob();if(activeVideoUrl)URL.revokeObjectURL(activeVideoUrl);
+      activeVideoUrl=URL.createObjectURL(blob);player.src=activeVideoUrl;
+      document.getElementById("playerTitle").textContent="Private video: "+app.name;
+      playerPanel.hidden=false;playerPanel.scrollIntoView({behavior:"smooth"});showMessage("Private video loaded for staff review.");
+     }catch(e){showMessage(e.message)}
+    });card.append(watch);
+   }
+   list.append(card);
+  }
+ }catch(e){staffToken="";showMessage(e.message||"Unable to load applications.");}
+});
+window.addEventListener("beforeunload",()=>{if(activeVideoUrl)URL.revokeObjectURL(activeVideoUrl)});
+</script></body></html>
