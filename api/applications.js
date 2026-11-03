@@ -39,23 +39,53 @@ export default async function handler(req, res) {
     const sql = neon(process.env.DATABASE_URL);
     const body = req.body || {};
     if (body.action === "complete") {
-      const { applicationId, filmPathname, filmOriginalName, filmContentType, filmSizeBytes } = body;
+      const { applicationId } = body;
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(applicationId || "")) {
         return res.status(400).json({ error: "Invalid application reference." });
       }
-      if (filmPathname && !filmPathname.startsWith(`athlete-videos/${applicationId}/`)) {
-        return res.status(400).json({ error: "Invalid private video reference." });
+      const submittedVideos = Array.isArray(body.videos) ? body.videos : (body.filmPathname ? [{
+        pathname: body.filmPathname, originalName: body.filmOriginalName,
+        contentType: body.filmContentType, sizeBytes: body.filmSizeBytes
+      }] : []);
+      if (submittedVideos.length > 5) return res.status(400).json({ error: "You can upload up to five videos per application." });
+      const allowedVideoTypes = new Set(["video/mp4", "video/quicktime", "video/webm", "video/x-msvideo"]);
+      for (const video of submittedVideos) {
+        if (!video || typeof video.pathname !== "string" || !video.pathname.startsWith(`athlete-videos/${applicationId}/`) ||
+            !allowedVideoTypes.has(video.contentType) || !Number.isInteger(video.sizeBytes) ||
+            video.sizeBytes < 1 || video.sizeBytes > 100 * 1024 * 1024) {
+          return res.status(400).json({ error: "One of the private video references is invalid." });
+        }
       }
       const rows = await sql`SELECT id, athlete_name AS name, athlete_level AS level, grad_year AS grad, position, current_school AS school, gpa, preferred_plan AS plan, recruiting_status AS status, contact_email AS email, parent_email AS "parentEmail" FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
       if (!rows.length) return res.status(404).json({ error: "Application not found." });
-      if (filmPathname) {
-        await sql`UPDATE athlete_applications SET film_blob_pathname = ${filmPathname}, film_original_name = ${String(filmOriginalName || "").slice(0, 180) || null}, film_content_type = ${String(filmContentType || "").slice(0, 100) || null}, film_size_bytes = ${Number.isInteger(filmSizeBytes) && filmSizeBytes > 0 ? filmSizeBytes : null} WHERE id = ${applicationId}`;
+      if (submittedVideos.length) {
+        await sql`CREATE TABLE IF NOT EXISTS athlete_application_videos (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          application_id UUID NOT NULL REFERENCES athlete_applications(id) ON DELETE CASCADE,
+          blob_pathname TEXT NOT NULL UNIQUE,
+          original_name TEXT,
+          content_type TEXT NOT NULL,
+          size_bytes BIGINT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )`;
+        for (const video of submittedVideos) {
+          await sql`INSERT INTO athlete_application_videos
+            (application_id, blob_pathname, original_name, content_type, size_bytes)
+            VALUES (${applicationId}, ${video.pathname}, ${String(video.originalName || "").slice(0, 180) || null},
+              ${video.contentType}, ${video.sizeBytes})
+            ON CONFLICT (blob_pathname) DO NOTHING`;
+        }
+        const first = submittedVideos[0];
+        await sql`UPDATE athlete_applications SET film_blob_pathname = ${first.pathname},
+          film_original_name = ${String(first.originalName || "").slice(0, 180) || null},
+          film_content_type = ${first.contentType}, film_size_bytes = ${first.sizeBytes}
+          WHERE id = ${applicationId}`;
       }
-      const application = { ...rows[0], filmPathname, film: body.film || "" };
+      const application = { ...rows[0], filmPathname: submittedVideos[0]?.pathname || "", film: body.film || "" };
       let emailsSent = false;
       try { emailsSent = await sendNotifications(application); }
       catch (mailError) { console.error("Application email delivery failed", mailError); }
-      return res.status(200).json({ ok: true, emailsSent, message: "Your evaluation request has been received." });
+      return res.status(200).json({ ok: true, emailsSent, videoCount: submittedVideos.length, message: "Your evaluation request has been received." });
     }
 
     const { name, level, grad, position, school, gpa, plan, film, status, email, parentEmail, parentConsent } = body;
