@@ -46,9 +46,12 @@
   if(file){
    if(!file.type.startsWith('video/')||file.size>250*1024*1024)throw new Error('Your application was saved, but the video must be a supported video file under 250 MB. You can submit the video again after correcting it.');
    button.textContent='Preparing secure upload…';
-   const {upload}=await import('https://esm.sh/@vercel/blob/client@2.4.1');
-   const uploaded=await upload('athlete-videos/'+saved.applicationId+'/'+file.name,file,{access:'private',handleUploadUrl:'/api/video-upload',clientPayload:JSON.stringify({applicationId:saved.applicationId}),onUploadProgress:({percentage})=>{button.textContent='Uploading private video '+Math.round(percentage)+'%…'}});
-   filmPathname=uploaded.pathname;
+   const prepared=await fetch('/api/video-upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({applicationId:saved.applicationId,contentType:file.type,size:file.size,originalName:file.name})});
+   const authorization=await prepared.json();if(!prepared.ok)throw new Error(authorization.error||'Secure upload could not be prepared.');
+   button.textContent='Uploading private video…';
+   const uploaded=await fetch(authorization.uploadUrl,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+   if(!uploaded.ok)throw new Error('The private video upload failed. Your application information has been saved; please try the video again.');
+   filmPathname=authorization.pathname;
   }
   button.textContent='Finishing submission…';
   const completed=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'complete',applicationId:saved.applicationId,filmPathname,film:v('film')})});
