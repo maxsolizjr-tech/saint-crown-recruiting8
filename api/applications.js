@@ -7,7 +7,7 @@ const allowedPlans = new Set([
   "$1,500 six-month recruiting development", "$2,400 twelve-month prospect development",
   "Not sure yet"
 ]);
-const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function sendNotifications(application) {
   if (!process.env.RESEND_API_KEY || !process.env.APPLICATION_FROM_EMAIL) return false;
