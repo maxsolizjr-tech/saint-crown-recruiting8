@@ -1,0 +1,12 @@
+{
+  "name": "saint-crown-recruiting",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Saint-Crown Recruiting website and application backend",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "@vercel/blob": "^2.0.0",
+    "resend": "^6.0.0"
+  }
+}
