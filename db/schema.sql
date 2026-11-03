@@ -21,3 +21,23 @@ CREATE TABLE IF NOT EXISTS athlete_applications (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS athlete_applications_created_at_idx ON athlete_applications (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS athlete_agreements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  athlete_name TEXT NOT NULL,
+  athlete_dob DATE NOT NULL,
+  signer_name TEXT NOT NULL,
+  signer_email TEXT NOT NULL,
+  signer_phone TEXT NOT NULL,
+  relationship TEXT NOT NULL,
+  program_key TEXT NOT NULL,
+  program_name TEXT NOT NULL,
+  program_price TEXT NOT NULL,
+  authority_confirmed BOOLEAN NOT NULL,
+  terms_accepted BOOLEAN NOT NULL,
+  social_consent BOOLEAN NOT NULL DEFAULT FALSE,
+  typed_signature TEXT NOT NULL,
+  signed_date DATE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS athlete_agreements_created_at_idx ON athlete_agreements (created_at DESC);
