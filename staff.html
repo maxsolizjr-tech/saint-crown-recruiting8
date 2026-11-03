@@ -69,12 +69,15 @@ document.getElementById("load").addEventListener("click",async()=>{
    const notes=document.createElement("textarea");notes.maxLength=5000;notes.placeholder="Internal notes for the recruiting team…";notes.value=app.staffNotes||"";notesWrap.append(notes);
    const saveWrap=document.createElement("div");const save=document.createElement("button");save.textContent="Save review";save.addEventListener("click",async()=>{save.disabled=true;showMessage("Saving review…");try{const response=await fetch("/api/staff-applications",{method:"POST",headers:{Authorization:"Bearer "+staffToken,"Content-Type":"application/json"},body:JSON.stringify({applicationId:app.id,reviewStatus:statusSelect.value,staffNotes:notes.value})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Review could not be saved.");app.reviewStatus=statusSelect.value;app.staffNotes=notes.value;showMessage("Review saved for "+app.name+".")}catch(error){showMessage(error.message)}finally{save.disabled=false}});saveWrap.append(save);
    review.append(statusWrap,notesWrap,saveWrap);card.append(review);
-   if(app.hasVideo){
-    const watch=document.createElement("button");watch.textContent="Watch private video";
+   const appVideos=(data.videos||[]).filter(video=>video.applicationId===app.id);
+   const videoEntries=appVideos.length?appVideos:(app.hasVideo?[{id:null,originalName:app.filmOriginalName||"Uploaded video"}]:[]);
+   for(const video of videoEntries){
+    const watch=document.createElement("button");watch.textContent="Watch: "+(video.originalName||"Private video");
     watch.addEventListener("click",async()=>{
      showMessage("Loading private video…");
      try{
-      const r=await fetch("/api/staff-video?applicationId="+encodeURIComponent(app.id),{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
+      const videoQuery=video.id?"&videoId="+encodeURIComponent(video.id):"";
+      const r=await fetch("/api/staff-video?applicationId="+encodeURIComponent(app.id)+videoQuery,{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
       if(!r.ok)throw new Error("Video could not be retrieved.");
       const blob=await r.blob();if(activeVideoUrl)URL.revokeObjectURL(activeVideoUrl);
       activeVideoUrl=URL.createObjectURL(blob);player.src=activeVideoUrl;
