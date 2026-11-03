@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     const sql = neon(process.env.DATABASE_URL);
     const body = req.body || {};
     if (body.action === "complete") {
-      const { applicationId, filmPathname } = body;
+      const { applicationId, filmPathname, filmOriginalName, filmContentType, filmSizeBytes } = body;
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(applicationId || "")) {
         return res.status(400).json({ error: "Invalid application reference." });
       }
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       const rows = await sql`SELECT id, athlete_name AS name, athlete_level AS level, grad_year AS grad, position, current_school AS school, gpa, preferred_plan AS plan, recruiting_status AS status, contact_email AS email, parent_email AS "parentEmail" FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
       if (!rows.length) return res.status(404).json({ error: "Application not found." });
       if (filmPathname) {
-        await sql`UPDATE athlete_applications SET film_blob_pathname = ${filmPathname} WHERE id = ${applicationId}`;
+        await sql`UPDATE athlete_applications SET film_blob_pathname = ${filmPathname}, film_original_name = ${String(filmOriginalName || "").slice(0, 180) || null}, film_content_type = ${String(filmContentType || "").slice(0, 100) || null}, film_size_bytes = ${Number.isInteger(filmSizeBytes) && filmSizeBytes > 0 ? filmSizeBytes : null} WHERE id = ${applicationId}`;
       }
       const application = { ...rows[0], filmPathname, film: body.film || "" };
       let emailsSent = false;
