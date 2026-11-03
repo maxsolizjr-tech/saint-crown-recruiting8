@@ -16,6 +16,7 @@ Configure secrets directly in Vercel Project → Settings → Environment Variab
 - `RESEND_API_KEY`: Resend API key.
 - `APPLICATION_FROM_EMAIL`: sender address verified in Resend.
 - `APPLICATION_NOTIFY_EMAIL`: `SaintCrownRecruiting@gmail.com` (optional; this is the default notification recipient).
+- `STAFF_REVIEW_TOKEN`: a long, random secret used by the private staff review workspace at `/staff.html`.
 
 For Blob, confirm the connected store is **Private** and the project has Vercel OIDC access. A long-lived `BLOB_READ_WRITE_TOKEN` is not required when the store is upgraded/connected with OIDC.
 
@@ -27,7 +28,7 @@ For Blob, confirm the connected store is **Private** and the project has Vercel 
 4. The browser uploads directly to Blob. Video limit: 100 MB.
 5. The application is finalized and notification emails are attempted.
 
-The signed upload URL is temporary and scoped; it is not a public viewing link. Staff review/download access still needs an authenticated private-Blob route or short-lived signed GET URL before launch.
+The signed upload URL is temporary and scoped; it is not a public viewing link. Staff review is available at `/staff.html`. The API requires the `STAFF_REVIEW_TOKEN` bearer secret and retrieves footage through the private Blob SDK `get()` method; the browser never receives a public Blob URL.
 
 ## Required verification before launch
 
@@ -37,7 +38,7 @@ The signed upload URL is temporary and scoped; it is not a public viewing link. 
 4. Add the Neon connection string and Resend variables to Preview first.
 5. Test a dummy application without a video and one with a small test video in Preview.
 6. Confirm both rows are saved, the Blob object is private, and the two emails arrive.
-7. Confirm staff-only video review is implemented and tested before accepting real athlete footage.
+7. Test `/staff.html` with the staff token, verify unauthorized requests are rejected, and confirm authorized staff can play uploaded footage.
 8. Only then consider a production deployment, with explicit owner approval.
 
 ## Safeguards
