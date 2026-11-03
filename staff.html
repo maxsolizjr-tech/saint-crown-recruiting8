@@ -24,22 +24,35 @@ video{width:100%;max-height:520px;margin-top:14px;background:#000;border-radius:
 <button id="load">Unlock applications</button><div id="message" role="status"></div>
 </section>
 <section id="applications" aria-live="polite"></section>
+<section id="agreements" aria-live="polite"></section>
 <section id="playerPanel" hidden><h2 id="playerTitle">Private athlete video</h2><video id="player" controls playsinline></video></section>
 </main>
 <script>
 let staffToken="",activeVideoUrl="";
-const message=document.getElementById("message"),list=document.getElementById("applications"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
+const message=document.getElementById("message"),list=document.getElementById("applications"),agreementsList=document.getElementById("agreements"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
 function field(label,value){const el=document.createElement("div");el.className="field";const b=document.createElement("b");b.textContent=label;el.append(b,document.createTextNode(value==null||value===""?"—":String(value)));return el}
 function showMessage(value){message.textContent=value}
 document.getElementById("load").addEventListener("click",async()=>{
  staffToken=document.getElementById("staffToken").value.trim();
  if(!staffToken){showMessage("Enter your staff token.");return}
- showMessage("Loading applications…");list.replaceChildren();playerPanel.hidden=true;
+ showMessage("Loading applications and agreements…");list.replaceChildren();agreementsList.replaceChildren();playerPanel.hidden=true;
  try{
   const response=await fetch("/api/staff-applications",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
   const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not authenticate.");
-  if(!data.applications.length){showMessage("No applications have been submitted yet.");return}
-  showMessage(data.applications.length+" recent application(s) loaded.");
+  const signedAgreements=data.agreements||[];
+  if(!data.applications.length&&!signedAgreements.length){showMessage("No applications or signed agreements have been submitted yet.");return}
+  showMessage(data.applications.length+" application(s) and "+signedAgreements.length+" signed agreement(s) loaded.");
+  if(signedAgreements.length){
+   const heading=document.createElement("h2");heading.textContent="Signed enrollment agreements";agreementsList.append(heading);
+   for(const agreement of signedAgreements){
+    const card=document.createElement("article");card.className="application";
+    const title=document.createElement("h2");title.textContent=agreement.athleteName+" · "+agreement.programName;
+    const meta=document.createElement("div");meta.className="meta";meta.textContent="Signed "+new Date(agreement.signedDate).toLocaleDateString()+" · Record "+agreement.id;
+    const grid=document.createElement("div");grid.className="grid";
+    [["Program price",agreement.programPrice],["Signer",agreement.signerName],["Signer email",agreement.signerEmail],["Signer phone",agreement.signerPhone],["Relationship",agreement.relationship],["Athlete DOB",agreement.athleteDob],["Electronic signature",agreement.signature],["Public media consent",agreement.socialConsent?"Yes":"No"]].forEach(([k,v])=>grid.append(field(k,v)));
+    card.append(title,meta,grid);agreementsList.append(card);
+   }
+  }
   for(const app of data.applications){
    const card=document.createElement("article");card.className="application";
    const title=document.createElement("h2");title.textContent=app.name+" · "+app.level;
