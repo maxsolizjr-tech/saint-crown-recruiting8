@@ -38,19 +38,23 @@
 </select></label><label class="full">Recruiting video or player-profile link<input name="film" type="url" placeholder="Hudl, YouTube, Google Drive or player-profile URL"></label><label class="full">Upload video from your phone (optional)<input name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"><small>Maximum 250 MB. Uploaded footage is intended for private review.</small></label><label>Parent/guardian email (required for high-school athletes)<input name="parentEmail" type="email"></label><label class="full"><span><input name="parentConsent" type="checkbox" style="width:auto;margin-right:8px">Parent/guardian confirms they consent to submission of this athlete information and footage.</span></label><label class="full">Current recruiting status<textarea name="status" placeholder="Offers, coach interest, transfer status, target level, goals..."></textarea></label><button class="btn primary full" type="submit">Send My Evaluation Request</button></form></div></section></main>
 <footer><div class="wrap foot"><div>© <span id="year"></span> Saint-Crown Recruiting. <a href="/privacy-policy.html" style="color:#caa35d;margin-left:14px">Privacy Policy</a></div><div class="legal">Saint-Crown Recruiting provides recruiting guidance and support. It is not affiliated with or endorsed by the NCAA, NAIA, NJCAA, any college, university, conference or athletic department unless specifically stated.</div></div></footer><div class="mobile"><a class="btn ghost" href="mailto:SaintCrownRecruiting@gmail.com">Email Saint-Crown</a><a class="btn primary" href="#apply">Free Evaluation</a></div><script>document.getElementById('year').textContent=new Date().getFullYear();document.querySelectorAll('.choose').forEach(b=>b.onclick=()=>{document.querySelector('[name=plan]').value=b.dataset.plan;document.querySelector('#apply').scrollIntoView({behavior:'smooth'})});document.getElementById('playerForm').addEventListener('submit',async function(e){
  e.preventDefault();const form=this,button=form.querySelector('button[type=submit]'),d=new FormData(form),v=n=>(d.get(n)||'').toString().trim();
- const id=crypto.randomUUID();button.disabled=true;button.textContent='Submitting…';
+ button.disabled=true;button.textContent='Saving application…';
  try{
+  const created=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v('name'),level:v('level'),grad:v('grad'),position:v('position'),school:v('school'),gpa:v('gpa'),plan:v('plan'),film:v('film'),status:v('status'),email:v('email'),parentEmail:v('parentEmail'),parentConsent:form.elements.parentConsent.checked})});
+  const saved=await created.json();if(!created.ok)throw new Error(saved.error||'Could not save your application.');
   let filmPathname='';const file=form.elements.video.files[0];
   if(file){
-   if(!file.type.startsWith('video/')||file.size>250*1024*1024)throw new Error('Choose a video file under 250 MB.');
-   const {upload}=await import('https://esm.sh/@vercel/blob/client@2');
-   const uploaded=await upload('athlete-videos/'+id+'/'+file.name,file,{access:'private',handleUploadUrl:'/api/video-upload',clientPayload:JSON.stringify({applicationId:id}),onUploadProgress:({percentage})=>{button.textContent='Uploading video '+Math.round(percentage)+'%…'}});
+   if(!file.type.startsWith('video/')||file.size>250*1024*1024)throw new Error('Your application was saved, but the video must be a supported video file under 250 MB. You can submit the video again after correcting it.');
+   button.textContent='Preparing secure upload…';
+   const {upload}=await import('https://esm.sh/@vercel/blob/client@2.4.1');
+   const uploaded=await upload('athlete-videos/'+saved.applicationId+'/'+file.name,file,{access:'private',handleUploadUrl:'/api/video-upload',clientPayload:JSON.stringify({applicationId:saved.applicationId}),onUploadProgress:({percentage})=>{button.textContent='Uploading private video '+Math.round(percentage)+'%…'}});
    filmPathname=uploaded.pathname;
   }
-  button.textContent='Sending application…';
-  const response=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({applicationId:id,name:v('name'),level:v('level'),grad:v('grad'),position:v('position'),school:v('school'),gpa:v('gpa'),plan:v('plan'),film:v('film'),status:v('status'),email:v('email'),parentEmail:v('parentEmail'),parentConsent:form.elements.parentConsent.checked,filmPathname})});
-  const result=await response.json();if(!response.ok)throw new Error(result.error||'Submission failed.');
-  alert(result.message);form.reset();
- }catch(error){alert(error.message||'We could not submit your request. Please email SaintCrownRecruiting@gmail.com.');}
+  button.textContent='Finishing submission…';
+  const completed=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'complete',applicationId:saved.applicationId,filmPathname,film:v('film')})});
+  const result=await completed.json();if(!completed.ok)throw new Error(result.error||'Your application was saved, but final confirmation failed. Please contact Saint-Crown.');
+  alert(result.message+(result.emailsSent?' A confirmation email is on its way.':' Our team will follow up; email notifications are not configured yet.'));
+  form.reset();
+ }catch(error){alert(error.message||'We could not complete your request. Please email SaintCrownRecruiting@gmail.com.');}
  finally{button.disabled=false;button.textContent='Send My Evaluation Request';}
-});</script></body></html>
+});;</script></body></html>
