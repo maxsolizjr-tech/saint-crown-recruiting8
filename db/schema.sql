@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS athlete_applications (
   contact_email TEXT NOT NULL,
   parent_email TEXT,
   parent_consent BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  review_status TEXT NOT NULL DEFAULT 'New',
+  staff_notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS athlete_applications_created_at_idx ON athlete_applications (created_at DESC);
