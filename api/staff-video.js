@@ -5,7 +5,7 @@ import { Readable } from "node:stream";
 
 function authorized(req) {
   const expected = process.env.STAFF_REVIEW_TOKEN || "";
-  const supplied = String(req.headers.authorization || "").replace(/^Bearer\\s+/i, "");
+  const supplied = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!expected || !supplied) return false;
   const a = Buffer.from(expected);
   const b = Buffer.from(supplied);
