@@ -30,6 +30,12 @@ export default async function handler(req, res) {
       social_consent BOOLEAN NOT NULL DEFAULT FALSE, typed_signature TEXT NOT NULL,
       signed_date DATE NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS athlete_application_videos (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      application_id UUID NOT NULL REFERENCES athlete_applications(id) ON DELETE CASCADE,
+      blob_pathname TEXT NOT NULL UNIQUE, original_name TEXT, content_type TEXT NOT NULL,
+      size_bytes BIGINT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
     if (req.method === "POST") {
       const { applicationId, reviewStatus, staffNotes } = req.body || {};
       const statuses = new Set(["New", "Reviewing", "Contacted", "Active", "Closed"]);
@@ -56,8 +62,11 @@ export default async function handler(req, res) {
       social_consent AS "socialConsent", typed_signature AS signature, signed_date AS "signedDate",
       created_at AS "createdAt"
       FROM athlete_agreements ORDER BY created_at DESC LIMIT 100`;
+    const videos = await sql`SELECT id, application_id AS "applicationId", original_name AS "originalName",
+      content_type AS "contentType", size_bytes AS "sizeBytes"
+      FROM athlete_application_videos ORDER BY created_at ASC`;
     res.setHeader("Cache-Control", "private, no-store");
-    return res.status(200).json({ ok: true, applications: rows, agreements });
+    return res.status(200).json({ ok: true, applications: rows, agreements, videos });
   } catch (error) {
     console.error("Staff application list failed", error);
     return res.status(500).json({ error: "Unable to load applications." });
