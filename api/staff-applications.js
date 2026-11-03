@@ -70,6 +70,7 @@ export default async function handler(req, res) {
     const agreements = await sql`SELECT id, athlete_name AS "athleteName", athlete_dob AS "athleteDob",
       signer_name AS "signerName", signer_email AS "signerEmail", signer_phone AS "signerPhone",
       relationship, program_name AS "programName", program_price AS "programPrice",
+      authority_confirmed AS "authorityConfirmed", terms_accepted AS "termsAccepted",
       social_consent AS "socialConsent", typed_signature AS signature, signed_date AS "signedDate",
       created_at AS "createdAt"
       FROM athlete_agreements ORDER BY created_at DESC LIMIT 100`;
