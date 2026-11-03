@@ -8,7 +8,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f1e8;font:16px/1.5 Arial,sans-serif}
 main{max-width:900px;margin:0 auto;padding:32px 18px 70px}.brand{color:var(--gold);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:13px}
 h1{font-size:32px;margin:10px 0 4px}.muted{color:var(--muted)}.panel,.application{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0}
-label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}input{width:100%;padding:13px;border:1px solid var(--line);border-radius:8px;background:#080808;color:white;font-size:16px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}input,select,textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:8px;background:#080808;color:white;font-size:16px}select,textarea{margin-top:8px}textarea{min-height:90px;resize:vertical}
 button{border:0;border-radius:8px;padding:12px 17px;background:var(--gold);color:#17130b;font-weight:700;cursor:pointer;margin-top:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0}.field{font-size:14px}.field b{color:var(--muted);font-weight:400;display:block;font-size:12px}
 .application h2{font-size:19px;margin:0}.application .meta{color:var(--muted);font-size:13px}.application button{margin-right:8px}
@@ -47,6 +47,15 @@ document.getElementById("load").addEventListener("click",async()=>{
    const grid=document.createElement("div");grid.className="grid";
    [["Grad year",app.grad],["Position",app.position],["School",app.school],["GPA",app.gpa],["Plan",app.plan],["Recruiting status",app.status],["Athlete email",app.email],["Parent email",app.parentEmail],["Parent consent",app.parentConsent?"Yes":"No"],["Video",app.hasVideo?(app.filmOriginalName||"Uploaded"):"None"]].forEach(([k,v])=>grid.append(field(k,v)));
    card.append(title,meta,grid);
+   const review=document.createElement("div");review.className="grid";
+   const statusWrap=document.createElement("label");statusWrap.textContent="Review status";
+   const statusSelect=document.createElement("select");
+   ["New","Reviewing","Contacted","Active","Closed"].forEach(value=>{const option=document.createElement("option");option.value=value;option.textContent=value;statusSelect.append(option)});
+   statusSelect.value=app.reviewStatus||"New";statusWrap.append(statusSelect);
+   const notesWrap=document.createElement("label");notesWrap.textContent="Private staff notes";
+   const notes=document.createElement("textarea");notes.maxLength=5000;notes.placeholder="Internal notes for the recruiting team…";notes.value=app.staffNotes||"";notesWrap.append(notes);
+   const saveWrap=document.createElement("div");const save=document.createElement("button");save.textContent="Save review";save.addEventListener("click",async()=>{save.disabled=true;showMessage("Saving review…");try{const response=await fetch("/api/staff-applications",{method:"POST",headers:{Authorization:"Bearer "+staffToken,"Content-Type":"application/json"},body:JSON.stringify({applicationId:app.id,reviewStatus:statusSelect.value,staffNotes:notes.value})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Review could not be saved.");app.reviewStatus=statusSelect.value;app.staffNotes=notes.value;showMessage("Review saved for "+app.name+".")}catch(error){showMessage(error.message)}finally{save.disabled=false}});saveWrap.append(save);
+   review.append(statusWrap,notesWrap,saveWrap);card.append(review);
    if(app.hasVideo){
     const watch=document.createElement("button");watch.textContent="Watch private video";
     watch.addEventListener("click",async()=>{
