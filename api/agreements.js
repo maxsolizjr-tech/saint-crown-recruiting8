@@ -7,7 +7,7 @@ const plans = {
   "6-month": { name: "6-Month Recruiting Development", price: "$1,000 one-time payment" },
   "12-month": { name: "12-Month Prospect Development", price: "$2,000 one-time payment" }
 };
-const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
