@@ -18,6 +18,17 @@ export default async function handler(req, res) {
 
   try {
     const sql = neon(process.env.DATABASE_URL);
+    await sql`CREATE TABLE IF NOT EXISTS athlete_applications (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      athlete_name TEXT NOT NULL,
+      athlete_level TEXT NOT NULL CHECK (athlete_level IN ('High school','JUCO','Transfer portal')),
+      grad_year TEXT NOT NULL, position TEXT NOT NULL, current_school TEXT NOT NULL,
+      gpa TEXT, preferred_plan TEXT, film_blob_pathname TEXT, film_original_name TEXT,
+      film_content_type TEXT, film_size_bytes BIGINT, recruiting_status TEXT,
+      contact_email TEXT NOT NULL, parent_email TEXT, parent_consent BOOLEAN NOT NULL DEFAULT FALSE,
+      review_status TEXT NOT NULL DEFAULT 'New', staff_notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
     await sql`ALTER TABLE athlete_applications
       ADD COLUMN IF NOT EXISTS review_status TEXT NOT NULL DEFAULT 'New',
       ADD COLUMN IF NOT EXISTS staff_notes TEXT,
