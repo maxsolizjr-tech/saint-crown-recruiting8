@@ -3,8 +3,10 @@ import { Resend } from "resend";
 
 const allowedLevels = new Set(["High school", "JUCO", "Transfer portal"]);
 const allowedPlans = new Set([
-  "$350 monthly flex program", "$900 90-day recruiting program",
-  "$1,500 six-month recruiting development", "$2,400 twelve-month prospect development",
+  "$200/month Monthly Recruiting Program",
+  "$500 90-day recruiting program",
+  "$1,000 six-month recruiting development",
+  "$2,000 twelve-month prospect development",
   "Not sure yet"
 ]);
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
