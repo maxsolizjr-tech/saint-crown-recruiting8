@@ -49,7 +49,7 @@ document.getElementById("load").addEventListener("click",async()=>{
     const title=document.createElement("h2");title.textContent=agreement.athleteName+" · "+agreement.programName;
     const meta=document.createElement("div");meta.className="meta";meta.textContent="Signed "+new Date(agreement.signedDate).toLocaleDateString()+" · Record "+agreement.id;
     const grid=document.createElement("div");grid.className="grid";
-    [["Program price",agreement.programPrice],["Signer",agreement.signerName],["Signer email",agreement.signerEmail],["Signer phone",agreement.signerPhone],["Relationship",agreement.relationship],["Athlete DOB",agreement.athleteDob],["Electronic signature",agreement.signature],["Public media consent",agreement.socialConsent?"Yes":"No"]].forEach(([k,v])=>grid.append(field(k,v)));
+    [["Program price",agreement.programPrice],["Signer",agreement.signerName],["Signer email",agreement.signerEmail],["Signer phone",agreement.signerPhone],["Relationship",agreement.relationship],["Athlete DOB",agreement.athleteDob],["Authority confirmed",agreement.authorityConfirmed?"Yes":"No"],["Terms accepted",agreement.termsAccepted?"Yes":"No"],["Electronic signature",agreement.signature],["Public media consent",agreement.socialConsent?"Yes":"No"]].forEach(([k,v])=>grid.append(field(k,v)));
     card.append(title,meta,grid);agreementsList.append(card);
    }
   }
