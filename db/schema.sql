@@ -41,3 +41,14 @@ CREATE TABLE IF NOT EXISTS athlete_agreements (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS athlete_agreements_created_at_idx ON athlete_agreements (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS athlete_application_videos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES athlete_applications(id) ON DELETE CASCADE,
+  blob_pathname TEXT NOT NULL UNIQUE,
+  original_name TEXT,
+  content_type TEXT NOT NULL,
+  size_bytes BIGINT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS athlete_application_videos_application_idx ON athlete_application_videos (application_id, created_at);
