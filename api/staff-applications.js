@@ -22,6 +22,14 @@ export default async function handler(req, res) {
       ADD COLUMN IF NOT EXISTS review_status TEXT NOT NULL DEFAULT 'New',
       ADD COLUMN IF NOT EXISTS staff_notes TEXT,
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`;
+    await sql`CREATE TABLE IF NOT EXISTS athlete_agreements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), athlete_name TEXT NOT NULL, athlete_dob DATE NOT NULL,
+      signer_name TEXT NOT NULL, signer_email TEXT NOT NULL, signer_phone TEXT NOT NULL, relationship TEXT NOT NULL,
+      program_key TEXT NOT NULL, program_name TEXT NOT NULL, program_price TEXT NOT NULL,
+      authority_confirmed BOOLEAN NOT NULL, terms_accepted BOOLEAN NOT NULL,
+      social_consent BOOLEAN NOT NULL DEFAULT FALSE, typed_signature TEXT NOT NULL,
+      signed_date DATE NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
     if (req.method === "POST") {
       const { applicationId, reviewStatus, staffNotes } = req.body || {};
       const statuses = new Set(["New", "Reviewing", "Contacted", "Active", "Closed"]);
