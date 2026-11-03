@@ -25,10 +25,10 @@ For Blob, confirm the connected store is **Private** and the project has Vercel 
 1. The application is validated and saved to Neon first.
 2. For a video, the server checks that the application exists and that required parent consent is recorded.
 3. The server creates a 10-minute signed URL scoped to one private Blob pathname, PUT operation, accepted content type and maximum size.
-4. The browser uploads directly to Blob. Video limit: 100 MB.
+4. The browser uploads directly to Blob. Up to five videos per application; each video is limited to 100 MB.
 5. The application is finalized and notification emails are attempted.
 
-The signed upload URL is temporary and scoped; it is not a public viewing link. Staff review is available at `/staff.html`. The API requires the `STAFF_REVIEW_TOKEN` bearer secret and retrieves footage through the private Blob SDK `get()` method; the browser never receives a public Blob URL.
+The signed upload URL is temporary and scoped; it is not a public viewing link. Staff review is available at `/staff.html`. Staff can update an application’s private review status and internal notes, review signed enrollment agreements, and play each private video. Signed enrollment agreements are saved to the database before checkout and their reference is passed to Stripe as `client_reference_id`. The API requires the `STAFF_REVIEW_TOKEN` bearer secret and retrieves footage through the private Blob SDK `get()` method; the browser never receives a public Blob URL.
 
 ## Required verification before launch
 
