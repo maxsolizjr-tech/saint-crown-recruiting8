@@ -42,8 +42,14 @@ export default async function handler(req, res) {
       film_size_bytes AS "filmSizeBytes", (film_blob_pathname IS NOT NULL) AS "hasVideo",
       created_at AS "createdAt"
       FROM athlete_applications ORDER BY created_at DESC LIMIT 100`;
+    const agreements = await sql`SELECT id, athlete_name AS "athleteName", athlete_dob AS "athleteDob",
+      signer_name AS "signerName", signer_email AS "signerEmail", signer_phone AS "signerPhone",
+      relationship, program_name AS "programName", program_price AS "programPrice",
+      social_consent AS "socialConsent", typed_signature AS signature, signed_date AS "signedDate",
+      created_at AS "createdAt"
+      FROM athlete_agreements ORDER BY created_at DESC LIMIT 100`;
     res.setHeader("Cache-Control", "private, no-store");
-    return res.status(200).json({ ok: true, applications: rows });
+    return res.status(200).json({ ok: true, applications: rows, agreements });
   } catch (error) {
     console.error("Staff application list failed", error);
     return res.status(500).json({ error: "Unable to load applications." });
