@@ -56,8 +56,9 @@
   button.textContent='Finishing submission…';
   const completed=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'complete',applicationId:saved.applicationId,filmPathname,film:v('film'),filmOriginalName:file?.name||'',filmContentType:file?.type||'',filmSizeBytes:file?.size||0})});
   const result=await completed.json();if(!completed.ok)throw new Error(result.error||'Your application was saved, but final confirmation failed. Please contact Saint-Crown.');
-  alert(result.message+(result.emailsSent?' A confirmation email is on its way.':' Our team will follow up; email notifications are not configured yet.'));
-  form.reset();
- }catch(error){alert(error.message||'We could not complete your request. Please email SaintCrownRecruiting@gmail.com.');}
+  const successMessage=result.message+(result.emailsSent?' A confirmation email is on its way.':' Our team will follow up; email notifications are not configured yet.');
+  form.reset();button.disabled=false;button.textContent='Send My Evaluation Request';
+  alert(successMessage);
+ }catch(error){button.disabled=false;button.textContent='Send My Evaluation Request';alert(error.message||'We could not complete your request. Please email SaintCrownRecruiting@gmail.com.');}
  finally{button.disabled=false;button.textContent='Send My Evaluation Request';}
 });;</script></body></html>
