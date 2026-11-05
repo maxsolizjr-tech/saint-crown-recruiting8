@@ -22,9 +22,8 @@ const plans={monthly:{name:'Monthly Recruiting Program',price:'$200 per month',c
   const response=await fetch("/api/agreements",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const result=await response.json();
   if(!response.ok)throw new Error(result.error||"The agreement could not be saved.");
-  document.getElementById("agreementResult").textContent=result.emailsSent
-   ? "Your agreement is saved. A copy has been emailed to you and Saint-Crown. Reference: "+result.agreementId
-   : "Your agreement is saved securely. Email confirmation is not configured yet, but your signed record is available to our staff. Reference: "+result.agreementId;
+  document.getElementById("agreementResult").textContent="Your agreement is saved. Proceed to checkout to complete your enrollment.";
+  document.getElementById("checkout").textContent="Proceed to Checkout";
   document.getElementById("complete").classList.add("show");
   button.textContent="Agreement Saved";
   document.getElementById("complete").scrollIntoView({behavior:"smooth"});
