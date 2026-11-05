@@ -62,6 +62,17 @@ document.getElementById("load").addEventListener("click",async()=>{
      }catch(e){showMessage(e.message)}
     });card.append(watch);
    }
+
+   const remove=document.createElement("button");remove.textContent="Delete test application";remove.style.background="#8b2929";remove.style.color="#fff";
+   remove.addEventListener("click",async()=>{
+    if(!confirm("Permanently delete this application and its uploaded private video, if any? This cannot be undone."))return;
+    remove.disabled=true;showMessage("Deleting application…");
+    try{
+     const r=await fetch("/api/staff-delete-application",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({applicationId:app.id})});
+     const result=await r.json();if(!r.ok)throw new Error(result.error||"Could not delete application.");
+     card.remove();showMessage("Application deleted.");
+    }catch(e){remove.disabled=false;showMessage(e.message||"Could not delete application.");}
+   });card.append(remove);
    list.append(card);
   }
   for(const a of agreements){
