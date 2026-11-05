@@ -23,34 +23,40 @@ video{width:100%;max-height:520px;margin-top:14px;background:#000;border-radius:
 <label for="staffToken">Staff access token</label><input id="staffToken" type="password" autocomplete="current-password" placeholder="Enter staff access token">
 <button id="load">Unlock applications</button><div id="message" role="status"></div>
 </section>
-<nav class="panel" aria-label="Staff sections" style="display:flex;gap:10px;flex-wrap:wrap"><button id="applicationsTab" type="button" aria-pressed="true">Applications</button><button id="approvedTab" type="button" aria-pressed="false">Approved Athletes</button></nav>
+<nav class="panel" aria-label="Staff sections" style="display:flex;gap:10px;flex-wrap:wrap"><button id="applicationsTab" type="button" aria-pressed="true">Applications</button><button id="approvedTab" type="button" aria-pressed="false">Approved Athletes</button><button id="bookingsTab" type="button" aria-pressed="false">Call Bookings</button></nav>
 <section id="applications" aria-live="polite"></section>
 <section id="approvedAthletes" aria-live="polite" hidden></section>
+<section id="callBookings" aria-live="polite" hidden></section>
 <section id="playerPanel" hidden><h2 id="playerTitle">Private athlete video</h2><video id="player" controls playsinline></video></section>
 </main>
 <script>
 let staffToken="",activeVideoUrl="";
-const message=document.getElementById("message"),list=document.getElementById("applications"),approvedList=document.getElementById("approvedAthletes"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
+const message=document.getElementById("message"),list=document.getElementById("applications"),approvedList=document.getElementById("approvedAthletes"),bookingsList=document.getElementById("callBookings"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
 function showStaffTab(tab){
- const approved=tab==="approved";
- list.hidden=approved;approvedList.hidden=!approved;
- document.getElementById("applicationsTab").setAttribute("aria-pressed",String(!approved));
+ const approved=tab==="approved",bookings=tab==="bookings";
+ list.hidden=approved||bookings;approvedList.hidden=!approved;bookingsList.hidden=!bookings;
+ document.getElementById("applicationsTab").setAttribute("aria-pressed",String(!approved&&!bookings));
  document.getElementById("approvedTab").setAttribute("aria-pressed",String(approved));
+ document.getElementById("bookingsTab").setAttribute("aria-pressed",String(bookings));
 }
 document.getElementById("applicationsTab").addEventListener("click",()=>showStaffTab("applications"));
 document.getElementById("approvedTab").addEventListener("click",()=>showStaffTab("approved"));
+document.getElementById("bookingsTab").addEventListener("click",()=>showStaffTab("bookings"));
 function field(label,value){const el=document.createElement("div");el.className="field";const b=document.createElement("b");b.textContent=label;el.append(b,document.createTextNode(value==null||value===""?"—":String(value)));return el}
 function showMessage(value){message.textContent=value}
 document.getElementById("load").addEventListener("click",async()=>{
  staffToken=document.getElementById("staffToken").value.trim();
  if(!staffToken){showMessage("Enter your staff token.");return}
- showMessage("Loading applications…");list.replaceChildren();approvedList.replaceChildren();showStaffTab("applications");playerPanel.hidden=true;
+ showMessage("Loading staff information…");list.replaceChildren();approvedList.replaceChildren();bookingsList.replaceChildren();showStaffTab("applications");playerPanel.hidden=true;
  try{
   const response=await fetch("/api/staff-applications",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
   const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not authenticate.");
+  const bookingResponse=await fetch("/api/bookings?staff=1",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
+  const bookingData=await bookingResponse.json();if(!bookingResponse.ok)throw new Error(bookingData.error||"Could not load call bookings.");
+  const callBookings=bookingData.bookings||[];
   const agreements=data.agreements||[];const approvedContacts=data.approvedContacts||[];
   if(!data.applications.length&&!agreements.length&&!approvedContacts.length){showMessage("No applications, approved athlete contacts or signed agreements yet.");return}
-  showMessage(data.applications.length+" application(s), "+approvedContacts.length+" approved athlete contact(s) and "+agreements.length+" signed agreement(s) loaded.");
+  showMessage(data.applications.length+" application(s), "+approvedContacts.length+" approved athlete contact(s), "+agreements.length+" signed agreement(s) and "+callBookings.length+" call booking(s) loaded.");
   for(const app of data.applications){
    const card=document.createElement("article");card.className="application";
    const title=document.createElement("h2");title.textContent=app.name+" · "+app.level;
@@ -101,6 +107,23 @@ document.getElementById("load").addEventListener("click",async()=>{
    const grid=document.createElement("div");grid.className="grid";
    [["Name",contact.name],["Email",contact.email],["Phone",contact.phone]].forEach(([k,v])=>grid.append(field(k,v)));
    card.append(title,meta,grid);approvedList.append(card);
+  }
+  if(!callBookings.length){bookingsList.append(field("Call bookings","No calls have been booked yet."));}
+  const now=Date.now();
+  const sortedBookings=[...callBookings].sort((a,b)=>new Date(a.startsAt)-new Date(b.startsAt));
+  for(const booking of sortedBookings){
+   const start=new Date(booking.startsAt),end=new Date(booking.endsAt),past=start.getTime()<now;
+   const card=document.createElement("article");card.className="application";
+   const title=document.createElement("h2");title.textContent=booking.name+" · "+(past?"Past call":"Upcoming call");
+   const meta=document.createElement("div");meta.className="meta";
+   meta.textContent=new Intl.DateTimeFormat("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit",timeZone:"America/Chicago",timeZoneName:"short"}).format(start)+" · 30 minutes";
+   const grid=document.createElement("div");grid.className="grid";
+   const guestTime=new Intl.DateTimeFormat("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit",timeZone:booking.guestTimezone,timeZoneName:"short"}).format(start);
+   [["Athlete / Contact",booking.name],["Email",booking.email],["Phone",booking.phone],["Central time",meta.textContent],["Guest's local time",guestTime],["Time zone",booking.guestTimezone],["Booked on",new Date(booking.createdAt).toLocaleString()]].forEach(([k,v])=>grid.append(field(k,v)));
+   const actions=document.createElement("div");actions.style.display="flex";actions.style.gap="8px";actions.style.flexWrap="wrap";
+   const email=document.createElement("a");email.href="mailto:"+encodeURIComponent(booking.email);email.textContent="Email contact";email.style.color="#caa35d";email.style.padding="10px 0";
+   const phone=document.createElement("a");phone.href="tel:"+booking.phone.replace(/[^+\\d]/g,"");phone.textContent="Call contact";phone.style.color="#caa35d";phone.style.padding="10px 0";
+   actions.append(email,phone);card.append(title,meta,grid,actions);bookingsList.append(card);
   }
   for(const a of agreements){
    const card=document.createElement("article");card.className="application";
