@@ -19,14 +19,22 @@ export default async function handler(req, res) {
   if (!process.env.DATABASE_URL) return res.status(503).send("Database is not configured.");
 
   const applicationId = String(req.query.applicationId || "");
+  const videoId = String(req.query.videoId || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(applicationId)) {
     return res.status(400).send("Invalid application reference.");
   }
 
   try {
     const sql = neon(process.env.DATABASE_URL);
-    const rows = await sql`SELECT film_blob_pathname FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
-    const pathname = rows[0]?.film_blob_pathname;
+    let pathname = "";
+    if (videoId) {
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(videoId)) return res.status(400).send("Invalid video reference.");
+      const rows = await sql`SELECT blob_pathname FROM athlete_application_videos WHERE id = ${videoId} AND application_id = ${applicationId} LIMIT 1`;
+      pathname = rows[0]?.blob_pathname || "";
+    } else {
+      const rows = await sql`SELECT film_blob_pathname FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
+      pathname = rows[0]?.film_blob_pathname || "";
+    }
     if (!pathname || !pathname.startsWith(`athlete-videos/${applicationId}/`)) return res.status(404).send("Video not found.");
     const result = await get(pathname, { access: "private" });
     if (result?.statusCode !== 200) return res.status(404).send("Video not found.");
