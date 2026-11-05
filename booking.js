@@ -110,7 +110,7 @@
       $("#sc-booking-title").textContent="Confirmed!";
       $(".sc-booking-head .sc-booking-muted").textContent="Your call has been successfully booked.";
       [$(".sc-booking-timezone"),$(".sc-booking-controls"),$("#sc-calendar"),$("#sc-date-label"),$("#sc-times"),form].forEach(node=>node.hidden=true);
-      $("#sc-booking-success-detail").textContent="Confirmed! "+timeLabel(booked)+". You're booked. Our team will contact you soon.";
+      $("#sc-booking-success-detail").textContent="Confirmed! "+timeLabel(booked)+". Your booked. Our team will contact you soon.";
       $("#sc-booking-success").hidden=false;
       form.reset();state.selectedSlot="";
     }catch(err){if(err.message!=="Please choose another available time.")status.textContent=err.message;}
