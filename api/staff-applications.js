@@ -53,6 +53,20 @@ export default async function handler(req, res) {
     )`;
     await sql`CREATE TABLE IF NOT EXISTS approved_athlete_contacts (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
     const approvedContacts = await sql`SELECT id, name, email, phone, created_at AS "createdAt" FROM approved_athlete_contacts ORDER BY created_at DESC LIMIT 100`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid'`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_checkout_session_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_amount BIGINT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_currency TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ`;
+    const currentAthletes = await sql`SELECT id, athlete_name AS "athleteName", plan_name AS "planName",
+      signer_name AS "signerName", signer_email AS "signerEmail", signer_phone AS "signerPhone",
+      stripe_checkout_session_id AS "stripeCheckoutSessionId", paid_amount AS "paidAmount",
+      paid_currency AS "paidCurrency", paid_at AS "paidAt"
+      FROM signed_agreements
+      WHERE payment_status = 'paid' AND paid_at IS NOT NULL
+      ORDER BY paid_at DESC LIMIT 250`;
     const agreements = await sql`SELECT id, athlete_name AS "athleteName", plan_name AS "planName",
       plan_price AS "planPrice", signer_name AS "signerName", signer_email AS "signerEmail",
       signer_phone AS "signerPhone", relationship, typed_signature AS signature,
@@ -61,7 +75,7 @@ export default async function handler(req, res) {
       signed_at AS "signedAt"
       FROM signed_agreements ORDER BY signed_at DESC LIMIT 100`;
     res.setHeader("Cache-Control", "private, no-store");
-    return res.status(200).json({ ok: true, applications: rows, agreements, approvedContacts });
+    return res.status(200).json({ ok: true, applications: rows, agreements, approvedContacts, currentAthletes });
   } catch (error) {
     console.error("Staff application list failed", error);
     return res.status(500).json({ error: "Unable to load applications." });
