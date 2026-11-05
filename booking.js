@@ -38,6 +38,7 @@
         <label class="wide">Phone number<input name="phone" type="tel" required autocomplete="tel" maxlength="40"></label>
         <div class="wide"><button class="sc-booking-submit" type="submit">Confirm Booking</button><div class="sc-booking-status" id="sc-booking-status" role="status" aria-live="polite"></div></div>
       </form>
+      <div class="sc-booking-success" id="sc-booking-success" hidden aria-live="polite"><div class="sc-booking-success-mark">✓</div><h3>Booking completed!</h3><p id="sc-booking-success-detail"></p><p>Thank you. Your call has been successfully booked.</p></div>
     </div>`;
   document.body.appendChild(modal);
   const $ = s => modal.querySelector(s);
@@ -106,12 +107,16 @@
       if(!r.ok)throw new Error(result.error||"Booking failed. Please try again.");
       const booked=state.selectedSlot;
       const bookedDate=new Intl.DateTimeFormat("en-US",{timeZone:state.zone,weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(new Date(booked));
-      status.textContent="Booking completed! Your call is booked for "+bookedDate+" at "+timeLabel(booked)+". "+(result.emailsSent?"A confirmation email has been sent.":"Your appointment is saved. We will set up email confirmation next.");
-      form.reset();state.selectedSlot="";await loadMonth();
+      $("#sc-booking-title").textContent="Booking completed!";
+      $(".sc-booking-head .sc-booking-muted").textContent="Your call has been successfully booked.";
+      [$(".sc-booking-timezone"),$(".sc-booking-controls"),$("#sc-calendar"),$("#sc-date-label"),$("#sc-times"),form].forEach(node=>node.hidden=true);
+      $("#sc-booking-success-detail").textContent=bookedDate+" at "+timeLabel(booked)+" ("+state.zone+").";
+      $("#sc-booking-success").hidden=false;
+      form.reset();state.selectedSlot="";
     }catch(err){if(err.message!=="Please choose another available time.")status.textContent=err.message;}
     finally{button.disabled=false;button.textContent="Confirm Booking";}
   });
-  function open(){state.month=centralMonth();state.selectedDate="";state.selectedSlot="";$("#sc-booking-status").textContent="";modal.classList.add("open");modal.setAttribute("aria-hidden","false");loadMonth();}
+  function open(){state.month=centralMonth();state.selectedDate="";state.selectedSlot="";$("#sc-booking-title").textContent="Schedule a Call";$(".sc-booking-head .sc-booking-muted").textContent="Choose a 30-minute appointment. Our booking hours are Monday–Friday, 8:00 AM–5:00 PM Central Time.";[$(".sc-booking-timezone"),$(".sc-booking-controls"),$("#sc-calendar"),$("#sc-date-label"),$("#sc-times"),$("#sc-booking-form")].forEach(node=>node.hidden=false);$("#sc-booking-success").hidden=true;$("#sc-booking-status").textContent="";modal.classList.add("open");modal.setAttribute("aria-hidden","false");loadMonth();}
   document.addEventListener("click",e=>{const link=e.target.closest("a[data-schedule-call]");if(link){e.preventDefault();open();}});
   window.addEventListener("hashchange",()=>{if(location.hash==="#schedule-call")open();});
 })();
