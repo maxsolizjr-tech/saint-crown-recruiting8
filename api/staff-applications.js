@@ -19,7 +19,10 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
     await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS instagram_handle TEXT`;
-    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS twitter_handle TEXT`;\n    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS height TEXT`;\n    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS weight_lbs INTEGER`;\n    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS sixty_yard_dash NUMERIC(4,2)`;
+    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS twitter_handle TEXT`;
+    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS height TEXT`;
+    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS weight_lbs INTEGER`;
+    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS sixty_yard_dash NUMERIC(4,2)`;
     await sql`CREATE TABLE IF NOT EXISTS athlete_application_videos (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), application_id UUID NOT NULL REFERENCES athlete_applications(id) ON DELETE CASCADE, blob_pathname TEXT NOT NULL, original_name TEXT, content_type TEXT, size_bytes BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
     const rows = await sql`SELECT id, athlete_name AS name, athlete_level AS level, grad_year AS grad,
       position, height, weight_lbs AS "weight", sixty_yard_dash AS "sixtyYardDash", current_school AS school, gpa, preferred_plan AS plan,
