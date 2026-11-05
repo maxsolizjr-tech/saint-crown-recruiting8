@@ -23,6 +23,8 @@ const plans={monthly:{name:'Monthly Recruiting Program',price:'$200 per month',c
   const result=await response.json();
   if(!response.ok)throw new Error(result.error||"The agreement could not be saved.");
   document.getElementById("agreementResult").textContent="Your agreement is saved. Proceed to checkout to complete your enrollment.";
+  const checkoutUrl=new URL(plan.checkout);checkoutUrl.searchParams.set("client_reference_id",result.agreementId);
+  document.getElementById("checkout").href=checkoutUrl.toString();
   document.getElementById("checkout").textContent="Proceed to Checkout";
   document.getElementById("complete").classList.add("show");
   button.textContent="Agreement Saved";
