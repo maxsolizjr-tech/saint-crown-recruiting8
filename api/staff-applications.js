@@ -25,8 +25,32 @@ export default async function handler(req, res) {
       film_size_bytes AS "filmSizeBytes", (film_blob_pathname IS NOT NULL) AS "hasVideo",
       created_at AS "createdAt"
       FROM athlete_applications ORDER BY created_at DESC LIMIT 100`;
+    await sql`CREATE TABLE IF NOT EXISTS signed_agreements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      athlete_name TEXT NOT NULL,
+      plan_key TEXT NOT NULL,
+      plan_name TEXT NOT NULL,
+      plan_price TEXT NOT NULL,
+      signer_name TEXT NOT NULL,
+      signer_email TEXT NOT NULL,
+      signer_phone TEXT NOT NULL,
+      relationship TEXT NOT NULL,
+      typed_signature TEXT NOT NULL,
+      authority_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+      terms_accepted BOOLEAN NOT NULL DEFAULT FALSE,
+      social_media_consent BOOLEAN NOT NULL DEFAULT FALSE,
+      agreement_version TEXT NOT NULL,
+      signed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+    const agreements = await sql`SELECT id, athlete_name AS "athleteName", plan_name AS "planName",
+      plan_price AS "planPrice", signer_name AS "signerName", signer_email AS "signerEmail",
+      signer_phone AS "signerPhone", relationship, typed_signature AS signature,
+      authority_confirmed AS "authorityConfirmed", terms_accepted AS "termsAccepted",
+      social_media_consent AS "socialConsent", agreement_version AS "agreementVersion",
+      signed_at AS "signedAt"
+      FROM signed_agreements ORDER BY signed_at DESC LIMIT 100`;
     res.setHeader("Cache-Control", "private, no-store");
-    return res.status(200).json({ ok: true, applications: rows });
+    return res.status(200).json({ ok: true, applications: rows, agreements });
   } catch (error) {
     console.error("Staff application list failed", error);
     return res.status(500).json({ error: "Unable to load applications." });
