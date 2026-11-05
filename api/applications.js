@@ -40,6 +40,17 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
     const body = req.body || {};
+    if (body.action === "approved_contact") {
+      const name = String(body.name || "").trim();
+      const email = String(body.email || "").trim();
+      const phone = String(body.phone || "").trim();
+      if (name.length < 2 || name.length > 120 || !emailPattern.test(email) || email.length > 254 || phone.length < 7 || phone.length > 30 || !/^[+()0-9.\\s-]+$/.test(phone)) {
+        return res.status(400).json({ error: "Please enter your full name, a valid email, and a valid phone number." });
+      }
+      await sql`CREATE TABLE IF NOT EXISTS approved_athlete_contacts (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+      const saved = await sql`INSERT INTO approved_athlete_contacts (name,email,phone) VALUES (${name},${email},${phone}) RETURNING id`;
+      return res.status(200).json({ ok: true, contactId: saved[0].id });
+    }
     if (body.action === "complete") {
       const { applicationId, filmPathname, filmOriginalName, filmContentType, filmSizeBytes } = body;
       const videos = Array.isArray(body.videos) ? body.videos : [];
