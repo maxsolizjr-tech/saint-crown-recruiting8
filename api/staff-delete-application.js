@@ -21,11 +21,14 @@ export default async function handler(req, res) {
   }
   try {
     const sql = neon(process.env.DATABASE_URL);
+    await sql`CREATE TABLE IF NOT EXISTS athlete_application_videos (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), application_id UUID NOT NULL REFERENCES athlete_applications(id) ON DELETE CASCADE, blob_pathname TEXT NOT NULL, original_name TEXT, content_type TEXT, size_bytes BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+    const videos = await sql`SELECT blob_pathname FROM athlete_application_videos WHERE application_id = ${applicationId}`;
     const rows = await sql`DELETE FROM athlete_applications WHERE id = ${applicationId} RETURNING film_blob_pathname AS pathname`;
     if (!rows.length) return res.status(404).json({ error: "Application not found." });
-    let videoDeleted = false;
-    if (rows[0].pathname) {
-      try { await del(rows[0].pathname); videoDeleted = true; }
+    const paths = [...videos.map(v => v.blob_pathname), rows[0].pathname].filter(Boolean);
+    let videoDeleted = 0;
+    for (const pathname of paths) {
+      try { await del(pathname); videoDeleted++; }
       catch (error) { console.error("Private video cleanup failed after application deletion", error); }
     }
     res.setHeader("Cache-Control", "private, no-store");
