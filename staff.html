@@ -38,9 +38,9 @@ document.getElementById("load").addEventListener("click",async()=>{
  try{
   const response=await fetch("/api/staff-applications",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
   const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not authenticate.");
-  const agreements=data.agreements||[];
-  if(!data.applications.length&&!agreements.length){showMessage("No applications or signed agreements yet.");return}
-  showMessage(data.applications.length+" application(s) and "+agreements.length+" signed agreement(s) loaded.");
+  const agreements=data.agreements||[];const approvedContacts=data.approvedContacts||[];
+  if(!data.applications.length&&!agreements.length&&!approvedContacts.length){showMessage("No applications, approved athlete contacts or signed agreements yet.");return}
+  showMessage(data.applications.length+" application(s), "+approvedContacts.length+" approved athlete contact(s) and "+agreements.length+" signed agreement(s) loaded.");
   for(const app of data.applications){
    const card=document.createElement("article");card.className="application";
    const title=document.createElement("h2");title.textContent=app.name+" · "+app.level;
@@ -83,6 +83,14 @@ document.getElementById("load").addEventListener("click",async()=>{
     }catch(e){remove.disabled=false;showMessage(e.message||"Could not delete application.");}
    });card.append(remove);
    list.append(card);
+  }
+  for(const contact of approvedContacts){
+   const card=document.createElement("article");card.className="application";
+   const title=document.createElement("h2");title.textContent=contact.name+" · Approved athlete inquiry";
+   const meta=document.createElement("div");meta.className="meta";meta.textContent="Received "+new Date(contact.createdAt).toLocaleString();
+   const grid=document.createElement("div");grid.className="grid";
+   [["Name",contact.name],["Email",contact.email],["Phone",contact.phone]].forEach(([k,v])=>grid.append(field(k,v)));
+   card.append(title,meta,grid);list.append(card);
   }
   for(const a of agreements){
    const card=document.createElement("article");card.className="application";
