@@ -51,6 +51,8 @@ export default async function handler(req, res) {
       agreement_version TEXT NOT NULL,
       signed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS approved_athlete_contacts (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+    const approvedContacts = await sql`SELECT id, name, email, phone, created_at AS "createdAt" FROM approved_athlete_contacts ORDER BY created_at DESC LIMIT 100`;
     const agreements = await sql`SELECT id, athlete_name AS "athleteName", plan_name AS "planName",
       plan_price AS "planPrice", signer_name AS "signerName", signer_email AS "signerEmail",
       signer_phone AS "signerPhone", relationship, typed_signature AS signature,
@@ -59,7 +61,7 @@ export default async function handler(req, res) {
       signed_at AS "signedAt"
       FROM signed_agreements ORDER BY signed_at DESC LIMIT 100`;
     res.setHeader("Cache-Control", "private, no-store");
-    return res.status(200).json({ ok: true, applications: rows, agreements });
+    return res.status(200).json({ ok: true, applications: rows, agreements, approvedContacts });
   } catch (error) {
     console.error("Staff application list failed", error);
     return res.status(500).json({ error: "Unable to load applications." });
