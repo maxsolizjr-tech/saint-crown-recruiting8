@@ -86,6 +86,17 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
     await ensureTable(sql);
+    if (req.method === "DELETE") {
+      if (!process.env.STAFF_REVIEW_TOKEN) return res.status(503).json({ error: "Staff review is not configured." });
+      if (!authorized(req)) return res.status(401).json({ error: "Unauthorized." });
+      const bookingId = String(req.body?.bookingId || "").trim();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookingId)) {
+        return res.status(400).json({ error: "A valid booking ID is required." });
+      }
+      const deleted = await sql`DELETE FROM call_bookings WHERE id = ${bookingId} RETURNING id`;
+      if (!deleted.length) return res.status(404).json({ error: "That call booking was not found. Refresh the dashboard and try again." });
+      return res.status(200).json({ ok: true, deleted: true });
+    }
     if (req.method === "GET" && String(req.query.staff || "") === "1") {
       if (!process.env.STAFF_REVIEW_TOKEN) return res.status(503).json({ error: "Staff review is not configured." });
       if (!authorized(req)) return res.status(401).json({ error: "Unauthorized." });
