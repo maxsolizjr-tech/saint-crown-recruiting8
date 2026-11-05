@@ -49,3 +49,20 @@ The signed upload URL is temporary and scoped; it is not a public viewing link. 
 - Uploaded videos are private; never display or email a public Blob URL.
 - The upload endpoint enforces MIME type and size limits server-side and checks for an existing application.
 - Do not enable live submissions until all service credentials and end-to-end tests pass.
+
+
+## Stripe payment confirmation and current athletes
+
+The agreement page appends its saved agreement UUID as the Payment Link `client_reference_id`. Stripe sends that reference in the Checkout Session webhook. The webhook verifies the Stripe signature against the raw request body, checks the paid status, USD amount, and expected Checkout mode for the selected plan, then marks only the matching signed agreement as paid. Duplicate deliveries are safe to retry.
+
+Add these environment variables to **Preview first**, then Production only after a successful test:
+- `STRIPE_WEBHOOK_SECRET`: signing secret for the Stripe webhook endpoint.
+- No Stripe secret API key is required by this Payment Link webhook implementation.
+
+In Stripe Dashboard, create a webhook endpoint at `https://www.saintcrownrecruiting.com/api/stripe-webhook` and subscribe to:
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+
+For preview testing, create a separate Stripe webhook endpoint pointing to the preview deployment URL and add that endpoint's signing secret to the Preview environment. Do not use a live endpoint secret in Preview or vice versa.
+
+The staff workspace adds a **Current Athletes** section sourced exclusively from agreements with `payment_status = 'paid'` and a verified payment timestamp. Signed agreements, checkout visits, pending payments, and failed payments are not shown as active clients.
