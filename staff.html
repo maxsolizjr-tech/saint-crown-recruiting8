@@ -23,18 +23,28 @@ video{width:100%;max-height:520px;margin-top:14px;background:#000;border-radius:
 <label for="staffToken">Staff access token</label><input id="staffToken" type="password" autocomplete="current-password" placeholder="Enter staff access token">
 <button id="load">Unlock applications</button><div id="message" role="status"></div>
 </section>
+<nav class="panel" aria-label="Staff sections" style="display:flex;gap:10px;flex-wrap:wrap"><button id="applicationsTab" type="button" aria-pressed="true">Applications</button><button id="approvedTab" type="button" aria-pressed="false">Approved Athletes</button></nav>
 <section id="applications" aria-live="polite"></section>
+<section id="approvedAthletes" aria-live="polite" hidden></section>
 <section id="playerPanel" hidden><h2 id="playerTitle">Private athlete video</h2><video id="player" controls playsinline></video></section>
 </main>
 <script>
 let staffToken="",activeVideoUrl="";
-const message=document.getElementById("message"),list=document.getElementById("applications"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
+const message=document.getElementById("message"),list=document.getElementById("applications"),approvedList=document.getElementById("approvedAthletes"),player=document.getElementById("player"),playerPanel=document.getElementById("playerPanel");
+function showStaffTab(tab){
+ const approved=tab==="approved";
+ list.hidden=approved;approvedList.hidden=!approved;
+ document.getElementById("applicationsTab").setAttribute("aria-pressed",String(!approved));
+ document.getElementById("approvedTab").setAttribute("aria-pressed",String(approved));
+}
+document.getElementById("applicationsTab").addEventListener("click",()=>showStaffTab("applications"));
+document.getElementById("approvedTab").addEventListener("click",()=>showStaffTab("approved"));
 function field(label,value){const el=document.createElement("div");el.className="field";const b=document.createElement("b");b.textContent=label;el.append(b,document.createTextNode(value==null||value===""?"—":String(value)));return el}
 function showMessage(value){message.textContent=value}
 document.getElementById("load").addEventListener("click",async()=>{
  staffToken=document.getElementById("staffToken").value.trim();
  if(!staffToken){showMessage("Enter your staff token.");return}
- showMessage("Loading applications…");list.replaceChildren();playerPanel.hidden=true;
+ showMessage("Loading applications…");list.replaceChildren();approvedList.replaceChildren();showStaffTab("applications");playerPanel.hidden=true;
  try{
   const response=await fetch("/api/staff-applications",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
   const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not authenticate.");
@@ -90,7 +100,7 @@ document.getElementById("load").addEventListener("click",async()=>{
    const meta=document.createElement("div");meta.className="meta";meta.textContent="Received "+new Date(contact.createdAt).toLocaleString();
    const grid=document.createElement("div");grid.className="grid";
    [["Name",contact.name],["Email",contact.email],["Phone",contact.phone]].forEach(([k,v])=>grid.append(field(k,v)));
-   card.append(title,meta,grid);list.append(card);
+   card.append(title,meta,grid);approvedList.append(card);
   }
   for(const a of agreements){
    const card=document.createElement("article");card.className="application";
