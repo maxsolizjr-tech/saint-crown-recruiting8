@@ -17,8 +17,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Choose an MP4, MOV, WebM or AVI video up to 100 MB." });
     }
     const sql = neon(process.env.DATABASE_URL);
-    const rows = await sql`SELECT id, athlete_level, parent_consent FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
-    if (!rows.length || (rows[0].athlete_level === "High school" && !rows[0].parent_consent)) {
+    const rows = await sql`SELECT id, age, parent_consent FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
+    if (!rows.length || (Number(rows[0].age) < 18 && !rows[0].parent_consent)) {
       return res.status(403).json({ error: "Application not found or parent consent is missing." });
     }
     const extension = ({ "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm", "video/x-msvideo": "avi" })[contentType];
