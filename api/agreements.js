@@ -31,11 +31,12 @@ export default async function handler(req, res) {
     const email = String(b.email || "").trim().toLowerCase();
     const phone = String(b.phone || "").trim().slice(0, 50);
     const relationship = String(b.relationship || "").trim().slice(0, 100);
+    const submittedBy = String(b.submittedBy || "").trim().toLowerCase();
     const signature = String(b.signature || "").trim().slice(0, 180);
     const age = ageOnToday(dob);
     const norm = s => s.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
     if (!plan || !athlete || !signer || !emailPattern.test(email) ||
-        phone.replace(/\D/g, "").length < 7 || !relationship || age === null ||
+        phone.replace(/\D/g, "").length < 7 || !relationship || !["athlete", "parent", "guardian"].includes(submittedBy) || age === null ||
         b.authority !== true || b.agree !== true || norm(signature) !== norm(signer)) {
       return res.status(400).json({ error: "Please check the required details, consent boxes and matching typed signature." });
     }
@@ -56,6 +57,7 @@ export default async function handler(req, res) {
       signer_email TEXT NOT NULL,
       signer_phone TEXT NOT NULL,
       relationship TEXT NOT NULL,
+      submitted_by TEXT NOT NULL DEFAULT 'athlete',
       typed_signature TEXT NOT NULL,
       authority_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
       terms_accepted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -63,18 +65,19 @@ export default async function handler(req, res) {
       agreement_version TEXT NOT NULL,
       signed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS submitted_by TEXT NOT NULL DEFAULT 'athlete'`;
     const rows = await sql`INSERT INTO signed_agreements
       (athlete_name, plan_key, plan_name, plan_price, signer_name, signer_email, signer_phone,
-       relationship, typed_signature, authority_confirmed, terms_accepted, social_media_consent, agreement_version)
+       relationship, submitted_by, typed_signature, authority_confirmed, terms_accepted, social_media_consent, agreement_version)
       VALUES (${athlete}, ${b.planKey}, ${plan[0]}, ${plan[1]}, ${signer}, ${email}, ${phone},
-       ${relationship}, ${signature}, TRUE, TRUE, ${b.social === true}, '2026-11-04')
+       ${relationship}, ${submittedBy}, ${signature}, TRUE, TRUE, ${b.social === true}, '2026-11-04')
       RETURNING id, signed_at AS "signedAt"`;
     let emailsSent = false;
     if (process.env.RESEND_API_KEY && process.env.APPLICATION_FROM_EMAIL) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         const notify = process.env.APPLICATION_NOTIFY_EMAIL || "SaintCrownRecruiting@gmail.com";
-        const message = `A signed Saint-Crown Recruiting agreement was recorded.\n\nProgram: ${plan[0]} — ${plan[1]}\nAthlete: ${athlete}\nSigner: ${signer}\nEmail: ${email}\nPhone: ${phone}\nRelationship: ${relationship}\nTyped signature: ${signature}\nPublic social-media consent: ${b.social === true ? "Yes" : "No"}\nReference: ${rows[0].id}\n\nThe complete record is available in the authenticated staff workspace.`;
+        const message = `A signed Saint-Crown Recruiting agreement was recorded.\n\nProgram: ${plan[0]} — ${plan[1]}\nAthlete: ${athlete}\nSigner: ${signer}\nEmail: ${email}\nPhone: ${phone}\nSigner relationship: ${relationship}\nSubmitted by: ${submittedBy}\nTyped signature: ${signature}\nPublic social-media consent: ${b.social === true ? "Yes" : "No"}\nReference: ${rows[0].id}\n\nThe complete record is available in the authenticated staff workspace.`;
         await Promise.all([
           resend.emails.send({ from: process.env.APPLICATION_FROM_EMAIL, to: notify, subject: "Signed Saint-Crown agreement: " + athlete, text: message }),
           resend.emails.send({ from: process.env.APPLICATION_FROM_EMAIL, to: email, subject: "Your Saint-Crown Recruiting agreement copy", text: message })
