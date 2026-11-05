@@ -26,7 +26,9 @@ Film link: ${application.film || "Not provided"}
 Private uploaded video: ${application.filmPathname ? "Uploaded (private; review through authenticated staff workflow)" : "None"}
 Recruiting status: ${application.status || "Not provided"}
 Contact: ${application.email}
-Parent/guardian: ${application.parentEmail || "Not provided"}`;
+Parent/guardian: ${application.parentEmail || "Not provided"}
+Instagram: ${application.instagram || "Not provided"}
+Twitter / X: ${application.twitter || "Not provided"}`;
   await resend.emails.send({ from: process.env.APPLICATION_FROM_EMAIL, to: notify, subject: "New Saint-Crown athlete application: " + application.name, text: summary });
   await resend.emails.send({ from: process.env.APPLICATION_FROM_EMAIL, to: application.email, subject: "Saint-Crown received your evaluation request", text: "Thank you for submitting your athlete profile. Our team will review your information and follow up with next steps. Saint-Crown does not guarantee offers, scholarships or roster spots." });
   return true;
@@ -59,7 +61,7 @@ export default async function handler(req, res) {
       if (filmPathname) {
         await sql`UPDATE athlete_applications SET film_blob_pathname = ${filmPathname}, film_original_name = ${String(filmOriginalName || "").slice(0, 180) || null}, film_content_type = ${String(filmContentType || "").slice(0, 100) || null}, film_size_bytes = ${Number.isInteger(filmSizeBytes) && filmSizeBytes > 0 ? filmSizeBytes : null} WHERE id = ${applicationId}`;
       }
-      const application = { ...rows[0], filmPathname: filmPathname || videos[0]?.pathname || null, film: body.film || "" };
+      const application = { ...rows[0], filmPathname: filmPathname || videos[0]?.pathname || null, film: body.film || "", instagram: body.instagram || "", twitter: body.twitter || "" };
       let emailsSent = false;
       try { emailsSent = await sendNotifications(application); }
       catch (mailError) { console.error("Application email delivery failed", mailError); }
