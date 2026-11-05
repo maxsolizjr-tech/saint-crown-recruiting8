@@ -55,7 +55,7 @@ document.getElementById("load").addEventListener("click",async()=>{
   const bookingData=await bookingResponse.json();if(!bookingResponse.ok)throw new Error(bookingData.error||"Could not load call bookings.");
   const callBookings=bookingData.bookings||[];
   const agreements=data.agreements||[];const approvedContacts=data.approvedContacts||[];
-  if(!data.applications.length&&!agreements.length&&!approvedContacts.length){showMessage("No applications, approved athlete contacts or signed agreements yet.");return}
+  if(!data.applications.length&&!agreements.length&&!approvedContacts.length&&!callBookings.length){showMessage("No applications, approved athlete contacts, signed agreements or call bookings yet.");return}
   showMessage(data.applications.length+" application(s), "+approvedContacts.length+" approved athlete contact(s), "+agreements.length+" signed agreement(s) and "+callBookings.length+" call booking(s) loaded.");
   for(const app of data.applications){
    const card=document.createElement("article");card.className="application";
@@ -123,7 +123,17 @@ document.getElementById("load").addEventListener("click",async()=>{
    const actions=document.createElement("div");actions.style.display="flex";actions.style.gap="8px";actions.style.flexWrap="wrap";
    const email=document.createElement("a");email.href="mailto:"+encodeURIComponent(booking.email);email.textContent="Email contact";email.style.color="#caa35d";email.style.padding="10px 0";
    const phone=document.createElement("a");phone.href="tel:"+booking.phone.replace(/[^+\d]/g,"");phone.textContent="Call contact";phone.style.color="#caa35d";phone.style.padding="10px 0";
-   actions.append(email,phone);card.append(title,meta,grid,actions);bookingsList.append(card);
+   const remove=document.createElement("button");remove.textContent="Delete booked call";remove.style.background="#8b2929";remove.style.color="#fff";
+   remove.addEventListener("click",async()=>{
+    if(!confirm("Permanently delete this booked call? The time will become available for another client. This cannot be undone."))return;
+    remove.disabled=true;showMessage("Deleting booked call…");
+    try{
+     const r=await fetch("/api/bookings",{method:"DELETE",headers:{"Content-Type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({bookingId:booking.id})});
+     const result=await r.json();if(!r.ok)throw new Error(result.error||"Could not delete booked call.");
+     card.remove();showMessage("Booked call deleted. Its time is now available for another booking.");
+    }catch(e){remove.disabled=false;showMessage(e.message||"Could not delete booked call.");}
+   });
+   actions.append(email,phone);card.append(title,meta,grid,actions,remove);bookingsList.append(card);
   }
   for(const a of agreements){
    const card=document.createElement("article");card.className="application";
