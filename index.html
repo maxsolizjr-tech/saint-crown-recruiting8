@@ -40,11 +40,11 @@
  e.preventDefault();const form=this,button=form.querySelector('button[type=submit]'),d=new FormData(form),v=n=>(d.get(n)||'').toString().trim();
  button.disabled=true;button.textContent='Saving application…';
  try{
-  const created=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v('name'),level:v('level'),grad:v('grad'),position:v('position'),school:v('school'),gpa:v('gpa'),plan:v('plan'),film:v('film'),status:v('status'),email:v('email'),parentEmail:v('parentEmail'),parentConsent:form.elements.parentConsent.checked,instagram:v('instagram'),twitter:v('twitter')})});
-  const saved=await created.json();if(!created.ok)throw new Error(saved.error||'Could not save your application.');
   const files=Array.from(form.elements.videos.files||[]);
   if(files.length>10)throw new Error('Please choose no more than 10 videos.');
   if(files.some(file=>!['video/mp4','video/quicktime','video/webm','video/x-msvideo'].includes(file.type)||file.size>100*1024*1024))throw new Error('Each video must be MP4, MOV, WebM or AVI and no larger than 100 MB.');
+  const created=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v('name'),level:v('level'),grad:v('grad'),position:v('position'),school:v('school'),gpa:v('gpa'),plan:v('plan'),film:v('film'),status:v('status'),email:v('email'),parentEmail:v('parentEmail'),parentConsent:form.elements.parentConsent.checked,instagram:v('instagram'),twitter:v('twitter')})});
+  const saved=await created.json();if(!created.ok)throw new Error(saved.error||'Could not save your application.');
   const uploadedVideos=[];
   for(let i=0;i<files.length;i++){
    const file=files[i];button.textContent='Preparing video '+(i+1)+' of '+files.length+'…';
