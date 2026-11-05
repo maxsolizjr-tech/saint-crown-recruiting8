@@ -38,8 +38,9 @@ document.getElementById("load").addEventListener("click",async()=>{
  try{
   const response=await fetch("/api/staff-applications",{headers:{Authorization:"Bearer "+staffToken},cache:"no-store"});
   const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not authenticate.");
-  if(!data.applications.length){showMessage("No applications have been submitted yet.");return}
-  showMessage(data.applications.length+" recent application(s) loaded.");
+  const agreements=data.agreements||[];
+  if(!data.applications.length&&!agreements.length){showMessage("No applications or signed agreements yet.");return}
+  showMessage(data.applications.length+" application(s) and "+agreements.length+" signed agreement(s) loaded.");
   for(const app of data.applications){
    const card=document.createElement("article");card.className="application";
    const title=document.createElement("h2");title.textContent=app.name+" · "+app.level;
@@ -62,6 +63,12 @@ document.getElementById("load").addEventListener("click",async()=>{
     });card.append(watch);
    }
    list.append(card);
+  }
+  for(const a of agreements){
+   const card=document.createElement("article");card.className="application";
+   const title=document.createElement("h2");title.textContent=a.athleteName+" · "+a.planName;
+   const meta=document.createElement("div");meta.className="meta";meta.textContent="Signed "+new Date(a.signedAt).toLocaleString()+" · "+a.id;
+   card.append(title,meta);list.append(card);
   }
  }catch(e){staffToken="";showMessage(e.message||"Unable to load applications.");}
 });
