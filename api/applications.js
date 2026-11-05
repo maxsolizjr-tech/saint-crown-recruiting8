@@ -68,24 +68,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, emailsSent, message: "Your evaluation request has been received." });
     }
 
-    const { name, level, grad, position, height, weight, sixtyYardDash, school, gpa, plan, film, status, email, parentEmail, parentConsent, instagram, twitter } = body;
-    if (![name, level, grad, position, height, weight, school, email].every(v => typeof v === "string" && v.trim())) {
+    const { name, level, age, grad, position, height, weight, sixtyYardDash, school, gpa, plan, film, status, email, parentEmail, parentConsent, instagram, twitter } = body;
+    if (![name, level, age, grad, position, height, weight, school, email].every(v => (typeof v === "string" || typeof v === "number") && String(v).trim())) {
       return res.status(400).json({ error: "Please complete all required fields." });
     }
-    if (!emailPattern.test(email) || !allowedLevels.has(level) || !allowedPlans.has(plan) || !Number.isFinite(Number(weight)) || Number(weight) < 50 || Number(weight) > 500 || (sixtyYardDash && (!Number.isFinite(Number(sixtyYardDash)) || Number(sixtyYardDash) < 5 || Number(sixtyYardDash) > 15))) {
+    if (!emailPattern.test(email) || !allowedLevels.has(level) || !allowedPlans.has(plan) || !Number.isInteger(Number(age)) || Number(age) < 13 || Number(age) > 60 || !Number.isFinite(Number(weight)) || Number(weight) < 50 || Number(weight) > 500 || (sixtyYardDash && (!Number.isFinite(Number(sixtyYardDash)) || Number(sixtyYardDash) < 5 || Number(sixtyYardDash) > 15))) {
       return res.status(400).json({ error: "Please check the email, athlete level and selected plan." });
     }
-    if (level === "High school" && (!emailPattern.test(parentEmail || "") || parentConsent !== true)) {
+    if (Number(age) < 18 && (!emailPattern.test(parentEmail || "") || parentConsent !== true)) {
       return res.status(400).json({ error: "A valid parent or guardian email and consent are required for high-school athletes." });
     }
+    await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS age INTEGER`;
     await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS instagram_handle TEXT`;
     await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS twitter_handle TEXT`;
     await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS height TEXT`;
     await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS weight_lbs INTEGER`;
     await sql`ALTER TABLE athlete_applications ADD COLUMN IF NOT EXISTS sixty_yard_dash NUMERIC(4,2)`;
     const rows = await sql`INSERT INTO athlete_applications
-      (athlete_name, athlete_level, grad_year, position, height, weight_lbs, sixty_yard_dash, current_school, gpa, preferred_plan, recruiting_status, contact_email, parent_email, parent_consent, instagram_handle, twitter_handle)
-      VALUES (${name.trim()}, ${level}, ${grad.trim()}, ${position.trim()}, ${height.trim()}, ${Number(weight)}, ${sixtyYardDash ? Number(sixtyYardDash) : null}, ${school.trim()}, ${gpa || null}, ${plan}, ${status || null}, ${email.trim()}, ${parentEmail || null}, ${Boolean(parentConsent)}, ${String(instagram || "").trim().slice(0,80) || null}, ${String(twitter || "").trim().slice(0,80) || null})
+      (athlete_name, athlete_level, age, grad_year, position, height, weight_lbs, sixty_yard_dash, current_school, gpa, preferred_plan, recruiting_status, contact_email, parent_email, parent_consent, instagram_handle, twitter_handle)
+      VALUES (${name.trim()}, ${level}, ${Number(age)}, ${grad.trim()}, ${position.trim()}, ${height.trim()}, ${Number(weight)}, ${sixtyYardDash ? Number(sixtyYardDash) : null}, ${school.trim()}, ${gpa || null}, ${plan}, ${status || null}, ${email.trim()}, ${parentEmail || null}, ${Boolean(parentConsent)}, ${String(instagram || "").trim().slice(0,80) || null}, ${String(twitter || "").trim().slice(0,80) || null})
       RETURNING id`;
     return res.status(200).json({ ok: true, applicationId: rows[0].id, film: film || "" });
   } catch (error) {
