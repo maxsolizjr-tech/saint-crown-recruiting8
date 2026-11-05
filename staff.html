@@ -46,7 +46,7 @@ document.getElementById("load").addEventListener("click",async()=>{
    const title=document.createElement("h2");title.textContent=app.name+" · "+app.level;
    const meta=document.createElement("div");meta.className="meta";meta.textContent=new Date(app.createdAt).toLocaleString();
    const grid=document.createElement("div");grid.className="grid";
-   [["Grad year",app.grad],["Position",app.position],["School",app.school],["GPA",app.gpa],["Plan",app.plan],["Recruiting status",app.status],["Athlete email",app.email],["Parent email",app.parentEmail],["Parent consent",app.parentConsent?"Yes":"No"],["Instagram",app.instagram||"—"],["Twitter / X",app.twitter||"—"],["Video uploads",(app.videos||[]).length|| (app.hasVideo?1:0)]].forEach(([k,v])=>grid.append(field(k,v)));
+   [["Grad year",app.grad],["Position",app.position],["Height",app.height],["Weight",app.weight ? app.weight+" lbs" : "—"],["60-yard dash",app.sixtyYardDash ? app.sixtyYardDash+" sec" : "—"],["School",app.school],["GPA",app.gpa],["Plan",app.plan],["Recruiting status",app.status],["Athlete email",app.email],["Parent email",app.parentEmail],["Parent consent",app.parentConsent?"Yes":"No"],["Instagram",app.instagram||"—"],["Twitter / X",app.twitter||"—"],["Video uploads",(app.videos||[]).length|| (app.hasVideo?1:0)]].forEach(([k,v])=>grid.append(field(k,v)));
    card.append(title,meta,grid);
    const videos=app.videos||[];
    if(videos.length){
