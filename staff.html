@@ -122,7 +122,7 @@ document.getElementById("load").addEventListener("click",async()=>{
    [["Athlete / Contact",booking.name],["Email",booking.email],["Phone",booking.phone],["Central time",meta.textContent],["Guest's local time",guestTime],["Time zone",booking.guestTimezone],["Booked on",new Date(booking.createdAt).toLocaleString()]].forEach(([k,v])=>grid.append(field(k,v)));
    const actions=document.createElement("div");actions.style.display="flex";actions.style.gap="8px";actions.style.flexWrap="wrap";
    const email=document.createElement("a");email.href="mailto:"+encodeURIComponent(booking.email);email.textContent="Email contact";email.style.color="#caa35d";email.style.padding="10px 0";
-   const phone=document.createElement("a");phone.href="tel:"+booking.phone.replace(/[^+\\d]/g,"");phone.textContent="Call contact";phone.style.color="#caa35d";phone.style.padding="10px 0";
+   const phone=document.createElement("a");phone.href="tel:"+booking.phone.replace(/[^+\d]/g,"");phone.textContent="Call contact";phone.style.color="#caa35d";phone.style.padding="10px 0";
    actions.append(email,phone);card.append(title,meta,grid,actions);bookingsList.append(card);
   }
   for(const a of agreements){
