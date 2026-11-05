@@ -1,5 +1,14 @@
 import { neon } from "@neondatabase/serverless";
 import { Resend } from "resend";
+import { timingSafeEqual } from "node:crypto";
+
+function authorized(req) {
+  const expected = process.env.STAFF_REVIEW_TOKEN || "";
+  const supplied = String(req.headers.authorization || "").replace(/^Bearer\\s+/i, "");
+  if (!expected || !supplied) return false;
+  const a = Buffer.from(expected), b = Buffer.from(supplied);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 const CENTRAL = "America/Chicago";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,6 +86,16 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
     await ensureTable(sql);
+    if (req.method === "GET" && String(req.query.staff || "") === "1") {
+      if (!process.env.STAFF_REVIEW_TOKEN) return res.status(503).json({ error: "Staff review is not configured." });
+      if (!authorized(req)) return res.status(401).json({ error: "Unauthorized." });
+      const bookings = await sql`SELECT id, starts_at AS "startsAt", ends_at AS "endsAt",
+        guest_name AS name, guest_email AS email, guest_phone AS phone,
+        guest_timezone AS "guestTimezone", created_at AS "createdAt"
+        FROM call_bookings ORDER BY starts_at ASC LIMIT 250`;
+      res.setHeader("Cache-Control", "private, no-store");
+      return res.status(200).json({ ok: true, bookings });
+    }
     if (req.method === "GET") {
       const { year, month, days } = monthBounds(String(req.query.month || ""));
       const start = zonedToUtc(year, month, 1, 0, 0, CENTRAL);
