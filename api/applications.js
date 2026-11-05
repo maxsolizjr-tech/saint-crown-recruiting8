@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       if (filmPathname && !filmPathname.startsWith(`athlete-videos/${applicationId}/`)) {
         return res.status(400).json({ error: "Invalid private video reference." });
       }
-      const rows = await sql`SELECT id, athlete_name AS name, athlete_level AS level, grad_year AS grad, position, current_school AS school, gpa, preferred_plan AS plan, recruiting_status AS status, contact_email AS email, parent_email AS "parentEmail" FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
+      const rows = await sql`SELECT id, athlete_name AS name, athlete_level AS level, grad_year AS grad, position, current_school AS school, gpa, preferred_plan AS plan, recruiting_status AS status, contact_email AS email, parent_email AS "parentEmail", instagram_handle AS instagram, twitter_handle AS twitter FROM athlete_applications WHERE id = ${applicationId} LIMIT 1`;
       if (!rows.length) return res.status(404).json({ error: "Application not found." });
       await sql`CREATE TABLE IF NOT EXISTS athlete_application_videos (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), application_id UUID NOT NULL REFERENCES athlete_applications(id) ON DELETE CASCADE, blob_pathname TEXT NOT NULL, original_name TEXT, content_type TEXT, size_bytes BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
       for (const video of videos) {
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       if (filmPathname) {
         await sql`UPDATE athlete_applications SET film_blob_pathname = ${filmPathname}, film_original_name = ${String(filmOriginalName || "").slice(0, 180) || null}, film_content_type = ${String(filmContentType || "").slice(0, 100) || null}, film_size_bytes = ${Number.isInteger(filmSizeBytes) && filmSizeBytes > 0 ? filmSizeBytes : null} WHERE id = ${applicationId}`;
       }
-      const application = { ...rows[0], filmPathname: filmPathname || videos[0]?.pathname || null, film: body.film || "", instagram: body.instagram || "", twitter: body.twitter || "" };
+      const application = { ...rows[0], filmPathname: filmPathname || videos[0]?.pathname || null, film: body.film || "" };
       let emailsSent = false;
       try { emailsSent = await sendNotifications(application); }
       catch (mailError) { console.error("Application email delivery failed", mailError); }
