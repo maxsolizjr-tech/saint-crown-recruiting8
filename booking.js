@@ -105,7 +105,8 @@
       if(r.status===409){status.textContent=result.error||"That time was just booked. Choose another slot.";state.selectedSlot="";await loadMonth();throw new Error("Please choose another available time.");}
       if(!r.ok)throw new Error(result.error||"Booking failed. Please try again.");
       const booked=state.selectedSlot;
-      status.textContent="Confirmed! "+timeLabel(booked)+". "+(result.emailsSent?"A confirmation email has been sent.":"Your booking is saved. Our team will follow up by email.");
+      const bookedDate=new Intl.DateTimeFormat("en-US",{timeZone:state.zone,weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(new Date(booked));
+      status.textContent="Booking completed! Your call is booked for "+bookedDate+" at "+timeLabel(booked)+". "+(result.emailsSent?"A confirmation email has been sent.":"Your appointment is saved. We will set up email confirmation next.");
       form.reset();state.selectedSlot="";await loadMonth();
     }catch(err){if(err.message!=="Please choose another available time.")status.textContent=err.message;}
     finally{button.disabled=false;button.textContent="Confirm Booking";}
