@@ -26,3 +26,5 @@
 .sc-booking-timezone{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
 .sc-booking-timezone select{flex:1;min-width:230px;background:#090909;color:#fff;border:1px solid #444;border-radius:8px;padding:10px}
 @media(max-width:560px){.sc-booking-panel{padding:18px}.sc-booking-head h2{font-size:27px}.sc-booking-times{grid-template-columns:repeat(2,minmax(0,1fr))}.sc-booking-form{grid-template-columns:1fr}.sc-booking-form .wide{grid-column:auto}.sc-booking-day{min-height:42px;padding:4px;font-size:13px}}
+
+.sc-booking-success{text-align:center;padding:44px 18px 32px}.sc-booking-success-mark{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 18px;border-radius:50%;background:#caa35d;color:#111;font-size:32px;font-weight:900}.sc-booking-success h3{font:700 30px/1.15 Georgia,serif;margin:0 0 12px;color:#f7f3ed}.sc-booking-success p{color:#d2ccc3;font-size:15px;line-height:1.6;margin:8px auto;max-width:440px}.sc-booking-panel [hidden]{display:none!important}
