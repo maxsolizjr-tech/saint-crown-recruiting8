@@ -38,7 +38,7 @@
         <label class="wide">Phone number<input name="phone" type="tel" required autocomplete="tel" maxlength="40"></label>
         <div class="wide"><button class="sc-booking-submit" type="submit">Confirm Booking</button><div class="sc-booking-status" id="sc-booking-status" role="status" aria-live="polite"></div></div>
       </form>
-      <div class="sc-booking-success" id="sc-booking-success" hidden aria-live="polite"><div class="sc-booking-success-mark">✓</div><h3>Booking completed!</h3><p id="sc-booking-success-detail"></p><p>Thank you. Your call has been successfully booked.</p></div>
+      <div class="sc-booking-success" id="sc-booking-success" hidden aria-live="polite"><div class="sc-booking-success-mark">✓</div><h3>Booking completed!</h3><p id="sc-booking-success-detail"></p></div>
     </div>`;
   document.body.appendChild(modal);
   const $ = s => modal.querySelector(s);
@@ -107,10 +107,10 @@
       if(!r.ok)throw new Error(result.error||"Booking failed. Please try again.");
       const booked=state.selectedSlot;
       const bookedDate=new Intl.DateTimeFormat("en-US",{timeZone:state.zone,weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(new Date(booked));
-      $("#sc-booking-title").textContent="Booking completed!";
+      $("#sc-booking-title").textContent="Confirmed!";
       $(".sc-booking-head .sc-booking-muted").textContent="Your call has been successfully booked.";
       [$(".sc-booking-timezone"),$(".sc-booking-controls"),$("#sc-calendar"),$("#sc-date-label"),$("#sc-times"),form].forEach(node=>node.hidden=true);
-      $("#sc-booking-success-detail").textContent=bookedDate+" at "+timeLabel(booked)+" ("+state.zone+").";
+      $("#sc-booking-success-detail").textContent="Confirmed! "+timeLabel(booked)+". You're booked. Our team will contact you soon.";
       $("#sc-booking-success").hidden=false;
       form.reset();state.selectedSlot="";
     }catch(err){if(err.message!=="Please choose another available time.")status.textContent=err.message;}
