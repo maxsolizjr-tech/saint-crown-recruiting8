@@ -36,7 +36,7 @@ const message=document.getElementById("message"),list=document.getElementById("a
 function showStaffTab(tab){
  const approved=tab==="approved",current=tab==="current",bookings=tab==="bookings";
  list.hidden=approved||current||bookings;approvedList.hidden=!approved;currentList.hidden=!current;bookingsList.hidden=!bookings;
- document.getElementById("applicationsTab").setAttribute("aria-pressed",String(!approved&&!bookings));
+ document.getElementById("applicationsTab").setAttribute("aria-pressed",String(!approved&&!current&&!bookings));
  document.getElementById("approvedTab").setAttribute("aria-pressed",String(approved));
  document.getElementById("currentTab").setAttribute("aria-pressed",String(current));
  document.getElementById("bookingsTab").setAttribute("aria-pressed",String(bookings));
@@ -108,7 +108,7 @@ document.getElementById("load").addEventListener("click",async()=>{
    const title=document.createElement("h2");title.textContent=athlete.athleteName+" · Active client";
    const meta=document.createElement("div");meta.className="meta";meta.textContent="Payment confirmed "+new Date(athlete.paidAt).toLocaleString();
    const grid=document.createElement("div");grid.className="grid";
-   [["Plan",athlete.planName],["Amount paid",new Intl.NumberFormat("en-US",{style:"currency",currency:(athlete.paidCurrency||"usd").toUpperCase()}).format(Number(athlete.paidAmount)/100)],["Payment date",new Date(athlete.paidAt).toLocaleString()],["Athlete",athlete.athleteName],["Signer",athlete.signerName],["Email",athlete.signerEmail],["Phone",athlete.signerPhone],["Agreement reference",athlete.id],["Stripe payment",athlete.stripeCheckoutSessionId]].forEach(([k,v])=>grid.append(field(k,v)));
+   [["Plan",athlete.planName],["Amount paid",new Intl.NumberFormat("en-US",{style:"currency",currency:(athlete.paidCurrency||"usd").toUpperCase()}).format(Number(athlete.paidAmount)/100)],["Payment date",new Date(athlete.paidAt).toLocaleString()],["Athlete",athlete.athleteName],["Signer",athlete.signerName],["Email",athlete.signerEmail],["Phone",athlete.signerPhone],["Agreement reference",athlete.id],["Subscription status",athlete.subscriptionStatus==="not_applicable"?"Paid in full":athlete.subscriptionStatus],["Stripe payment",athlete.stripeCheckoutSessionId]].forEach(([k,v])=>grid.append(field(k,v)));
    const email=document.createElement("a");email.href="mailto:"+encodeURIComponent(athlete.signerEmail);email.textContent="Email contact";email.style.color="#caa35d";email.style.padding="10px 0";
    const phone=document.createElement("a");phone.href="tel:"+String(athlete.signerPhone||"").replace(/[^+\\d]/g,"");phone.textContent="Call contact";phone.style.color="#caa35d";phone.style.padding="10px 0";
    card.append(title,meta,grid,email,phone);currentList.append(card);
