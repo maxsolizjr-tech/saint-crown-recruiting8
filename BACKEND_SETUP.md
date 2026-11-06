@@ -62,7 +62,9 @@ Add these environment variables to **Preview first**, then Production only after
 In Stripe Dashboard, create a webhook endpoint at `https://www.saintcrownrecruiting.com/api/stripe-webhook` and subscribe to:
 - `checkout.session.completed`
 - `checkout.session.async_payment_succeeded`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
 
 For preview testing, create a separate Stripe webhook endpoint pointing to the preview deployment URL and add that endpoint's signing secret to the Preview environment. Do not use a live endpoint secret in Preview or vice versa.
 
-The staff workspace adds a **Current Athletes** section sourced exclusively from agreements with `payment_status = 'paid'` and a verified payment timestamp. Signed agreements, checkout visits, pending payments, and failed payments are not shown as active clients.
+The staff workspace adds a **Current Athletes** section sourced exclusively from agreements with `payment_status = 'paid'` and a verified payment timestamp. Monthly clients remain listed only while Stripe reports their linked subscription as active; canceled or otherwise inactive subscriptions are excluded. Signed agreements, checkout visits, pending payments, and failed payments are not shown as active clients.
