@@ -48,6 +48,21 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid webhook payload");
   }
 
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    const subscription = event.data?.object;
+    if (!subscription?.id) return res.status(400).send("Invalid subscription event");
+    try {
+      const sql = neon(process.env.DATABASE_URL);
+      await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'not_applicable'`;
+      const status = event.type === "customer.subscription.deleted" ? "canceled" : String(subscription.status || "unknown");
+      await sql`UPDATE signed_agreements SET subscription_status = ${status} WHERE stripe_subscription_id = ${String(subscription.id)}`;
+      return res.status(200).json({ received: true, subscriptionUpdated: true });
+    } catch (error) {
+      console.error("Stripe subscription update failed", error);
+      return res.status(500).send("Unable to update subscription status");
+    }
+  }
+
   const supported = ["checkout.session.completed", "checkout.session.async_payment_succeeded"];
   if (!supported.includes(event.type)) return res.status(200).json({ received: true, ignored: true });
 
@@ -66,6 +81,8 @@ export default async function handler(req, res) {
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_checkout_session_id TEXT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'not_applicable'`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_amount BIGINT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_currency TEXT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ`;
@@ -78,13 +95,15 @@ export default async function handler(req, res) {
       console.warn("Stripe payment did not match signed plan", { agreementId, amount, currency, mode: session.mode });
       return res.status(200).json({ received: true, ignored: true, reason: "Payment does not match agreement plan" });
     }
-    const paidAt = new Date(Number(session.created) * 1000);
+    const paidAt = new Date(Number(event.created || session.created) * 1000);
     if (!Number.isFinite(paidAt.getTime())) return res.status(400).send("Invalid payment timestamp");
     const result = await sql`UPDATE signed_agreements
       SET payment_status = 'paid',
           stripe_checkout_session_id = ${String(session.id)},
           stripe_payment_intent_id = ${typeof session.payment_intent === "string" ? session.payment_intent : null},
           stripe_customer_id = ${typeof session.customer === "string" ? session.customer : null},
+          stripe_subscription_id = ${typeof session.subscription === "string" ? session.subscription : null},
+          subscription_status = ${session.mode === "subscription" ? "active" : "not_applicable"},
           paid_amount = ${amount},
           paid_currency = ${currency},
           paid_at = ${paidAt.toISOString()}
