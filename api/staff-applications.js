@@ -57,15 +57,17 @@ export default async function handler(req, res) {
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_checkout_session_id TEXT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`;
+    await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'not_applicable'`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_amount BIGINT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_currency TEXT`;
     await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ`;
     const currentAthletes = await sql`SELECT id, athlete_name AS "athleteName", plan_name AS "planName",
       signer_name AS "signerName", signer_email AS "signerEmail", signer_phone AS "signerPhone",
-      stripe_checkout_session_id AS "stripeCheckoutSessionId", paid_amount AS "paidAmount",
+      stripe_checkout_session_id AS "stripeCheckoutSessionId", subscription_status AS "subscriptionStatus", paid_amount AS "paidAmount",
       paid_currency AS "paidCurrency", paid_at AS "paidAt"
       FROM signed_agreements
-      WHERE payment_status = 'paid' AND paid_at IS NOT NULL
+      WHERE payment_status = 'paid' AND paid_at IS NOT NULL AND (subscription_status = 'active' OR subscription_status = 'not_applicable')
       ORDER BY paid_at DESC LIMIT 250`;
     const agreements = await sql`SELECT id, athlete_name AS "athleteName", plan_name AS "planName",
       plan_price AS "planPrice", signer_name AS "signerName", signer_email AS "signerEmail",
