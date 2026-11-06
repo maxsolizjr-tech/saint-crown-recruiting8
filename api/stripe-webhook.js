@@ -54,6 +54,7 @@ export default async function handler(req, res) {
     try {
       const sql = neon(process.env.DATABASE_URL);
       await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'not_applicable'`;
+      await sql`ALTER TABLE signed_agreements ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`;
       const status = event.type === "customer.subscription.deleted" ? "canceled" : String(subscription.status || "unknown");
       await sql`UPDATE signed_agreements SET subscription_status = ${status} WHERE stripe_subscription_id = ${String(subscription.id)}`;
       return res.status(200).json({ received: true, subscriptionUpdated: true });
